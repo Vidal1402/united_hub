@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"backend_united_hub/internal/auth"
@@ -41,7 +42,8 @@ func (s *AuthService) Login(ctx context.Context, in dto.LoginInput) (dto.LoginRe
 		return dto.LoginResponse{}, errors.New("invalid credentials")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(u.SenhaHash), []byte(in.Password)); err != nil {
+	hash := strings.TrimSpace(u.SenhaHash)
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(in.Password)); err != nil {
 		return dto.LoginResponse{}, errors.New("invalid credentials")
 	}
 
