@@ -1,0 +1,33 @@
+.env
+.env.local
+.env.*.local
+
+# Build / binários Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+dist/
+bin/
+
+# Dependências / módulos
+vendor/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log
+
+# Cursor / ferramentas locais
+.cursor/
+
+# Arquivos temporários
+*.tmp
+*.temp
+*.DS_Store
+
