@@ -42,17 +42,18 @@ func main() {
 	}
 	defer mongoDB.Close(context.Background())
 
-	// Redis
+	// Redis (opcional: se não conectar, segue sem cache)
 	rdb, err := cache.New(ctx, cache.RedisConfig{
 		Addr:     cfg.RedisAddr,
 		Password: cfg.RedisPassword,
 		DB:       cfg.RedisDB,
 	})
 	if err != nil {
-		logger.Error("redis connect", slog.Any("err", err))
-		os.Exit(1)
+		logger.Error("redis connect (continuando sem cache)", slog.Any("err", err))
+		rdb = nil
+	} else {
+		defer rdb.Close()
 	}
-	defer rdb.Close()
 
 	// Migrations/índices Mongo
 	if err := migrations.UpMongo(ctx, mongoDB.Database); err != nil {
