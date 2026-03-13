@@ -348,3 +348,55 @@ func (h *Handler) GetComercial(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, result)
 }
 
+// Usuários (admin)
+
+func (h *Handler) CreateUsuario(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var input dto.UsuarioCreateInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	if err := h.validator.Struct(input); err != nil {
+		response.Error(w, http.StatusBadRequest, "validation error", nil)
+		return
+	}
+	result, err := h.svc.CreateUsuario(ctx, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
+}
+
+func (h *Handler) ListUsuarios(w http.ResponseWriter, r *http.Request) {
+	pag := pagination.Parse(r, 20, 100)
+	ctx := r.Context()
+	result, err := h.svc.ListUsuarios(ctx, service.PageParams{
+		Limit:  pag.Limit,
+		Offset: pag.Offset,
+	})
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) UpdateUsuario(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id := chi.URLParam(r, "id")
+	var input dto.UsuarioUpdateInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.UpdateUsuario(ctx, id, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
+

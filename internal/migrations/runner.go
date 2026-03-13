@@ -147,6 +147,14 @@ func UpMongo(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 
+	// 18) Usuario
+	if err := ensureIndexes(ctx, db.Collection("usuarios"), []mongo.IndexModel{
+		{Keys: bson.D{{Key: "uuid", Value: 1}}, Options: options.Index().SetUnique(true)},
+		{Keys: bson.D{{Key: "email", Value: 1}}, Options: options.Index().SetUnique(true)},
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
 

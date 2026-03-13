@@ -27,6 +27,10 @@ func (h *Handler) GetProducao(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusUnauthorized, "unauthorized", nil)
 		return
 	}
+	if !claims.CanProducao {
+		response.Error(w, http.StatusForbidden, "forbidden", nil)
+		return
+	}
 	ctx := r.Context()
 	result, err := h.svc.GetProducao(ctx, claims.ClienteID.String())
 	if err != nil {
@@ -40,6 +44,10 @@ func (h *Handler) GetDashboardChart(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetClaims(r)
 	if !ok {
 		response.Error(w, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+	if !claims.CanPerformance {
+		response.Error(w, http.StatusForbidden, "forbidden", nil)
 		return
 	}
 	period := r.URL.Query().Get("period")
@@ -58,6 +66,10 @@ func (h *Handler) GetDashboardFunnel(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusUnauthorized, "unauthorized", nil)
 		return
 	}
+	if !claims.CanPerformance {
+		response.Error(w, http.StatusForbidden, "forbidden", nil)
+		return
+	}
 	ctx := r.Context()
 	result, err := h.svc.GetDashboardFunnel(ctx, claims.ClienteID.String())
 	if err != nil {
@@ -73,6 +85,10 @@ func (h *Handler) GetDashboardKPIs(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusUnauthorized, "unauthorized", nil)
 		return
 	}
+	if !claims.CanPerformance {
+		response.Error(w, http.StatusForbidden, "forbidden", nil)
+		return
+	}
 	ctx := r.Context()
 	result, err := h.svc.GetDashboardKPIs(ctx, claims.ClienteID.String())
 	if err != nil {
@@ -86,6 +102,10 @@ func (h *Handler) GetDashboardScore(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetClaims(r)
 	if !ok {
 		response.Error(w, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+	if !claims.CanPerformance {
+		response.Error(w, http.StatusForbidden, "forbidden", nil)
 		return
 	}
 	ctx := r.Context()

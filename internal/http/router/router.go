@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"backend_united_hub/internal/auth"
-	"backend_united_hub/internal/http/handlers/admin"
-	"backend_united_hub/internal/http/handlers/cliente"
+	adminhandler "backend_united_hub/internal/http/handlers/admin"
+	authhandler "backend_united_hub/internal/http/handlers/auth"
+	clientehandler "backend_united_hub/internal/http/handlers/cliente"
 	"backend_united_hub/internal/http/handlers/health"
 	"backend_united_hub/internal/http/middleware"
 	"backend_united_hub/internal/repository"
@@ -60,6 +61,7 @@ func New(d Deps) http.Handler {
 	produtoRepo := repository.NewMongoProdutoRepository(d.DB)
 	alertaRepo := repository.NewMongoAlertaRepository(d.DB)
 	notificacaoRepo := repository.NewMongoNotificacaoRepository(d.DB)
+	usuarioRepo := repository.NewMongoUsuarioRepository(d.DB)
 
 	// Services
 	clienteSvc := service.NewClienteService(
@@ -84,13 +86,21 @@ func New(d Deps) http.Handler {
 		notificacaoRepo,
 		relatorioRepo,
 		kanbanRepo,
+		usuarioRepo,
 	)
 
+	authSvc := service.NewAuthService(usuarioRepo, cliRepo, d.JWTSecret)
+
 	// Handlers
-	clienteH := cliente.New(clienteSvc, d.Validator)
-	adminH := admin.New(adminSvc, d.Validator)
+	clienteH := clientehandler.New(clienteSvc, d.Validator)
+	adminH := adminhandler.New(adminSvc, d.Validator)
+	authH := authhandler.New(authSvc, d.Validator)
 
 	r.Route("/api", func(api chi.Router) {
+		// auth
+		api.Post("/auth/login", authH.Login)
+		api.With(middleware.RequireJWT(d.JWTSecret)).Get("/auth/me", authH.Me)
+
 		api.Route("/cliente", func(cr chi.Router) {
 			cr.Use(middleware.RequireJWT(d.JWTSecret))
 			cr.Use(middleware.RequireRole(auth.RoleClient))
@@ -167,6 +177,10 @@ func New(d Deps) http.Handler {
 
 			ar.Get("/relatorios", adminH.ListRelatoriosAdmin)
 			ar.Get("/comercial", adminH.GetComercial)
+
+			ar.Post("/usuarios", adminH.CreateUsuario)
+			ar.Get("/usuarios", adminH.ListUsuarios)
+			ar.Put("/usuarios/{id}", adminH.UpdateUsuario)
 		})
 	})
 

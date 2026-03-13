@@ -2,9 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 
+	"backend_united_hub/internal/domain"
 	"backend_united_hub/internal/http/dto"
 	"backend_united_hub/internal/repository"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AdminService struct {
@@ -16,6 +20,7 @@ type AdminService struct {
 	notifs     repository.NotificacaoRepository
 	relatorios repository.RelatorioRepository
 	kanban     repository.KanbanRepository
+	usuarios   repository.UsuarioRepository
 }
 
 func NewAdminService(
@@ -27,6 +32,7 @@ func NewAdminService(
 	notifs repository.NotificacaoRepository,
 	relatorios repository.RelatorioRepository,
 	kanban repository.KanbanRepository,
+	usuarios repository.UsuarioRepository,
 ) *AdminService {
 	return &AdminService{
 		clientes:   clientes,
@@ -37,6 +43,7 @@ func NewAdminService(
 		notifs:     notifs,
 		relatorios: relatorios,
 		kanban:     kanban,
+		usuarios:   usuarios,
 	}
 }
 
@@ -267,5 +274,90 @@ func (s *AdminService) ListRelatoriosAdmin(ctx context.Context, page PageParams)
 
 func (s *AdminService) GetComercial(ctx context.Context) (any, error) {
 	return map[string]any{}, nil
+}
+
+// Usuários (auth/admin)
+
+func (s *AdminService) CreateUsuario(ctx context.Context, input dto.UsuarioCreateInput) (dto.UsuarioOutput, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return dto.UsuarioOutput{}, err
+	}
+
+	u := domain.Usuario{
+		UUID:           uuid.NewString(),
+		ClienteUUID:    input.ClienteUUID,
+		Email:          input.Email,
+		SenhaHash:      string(hash),
+		Role:           input.Role,
+		CanProducao:    input.CanProducao,
+		CanPerformance: input.CanPerformance,
+	}
+	if err := s.usuarios.Create(ctx, &u); err != nil {
+		return dto.UsuarioOutput{}, err
+	}
+
+	return dto.UsuarioOutput{
+		UUID:           u.UUID,
+		ClienteUUID:    u.ClienteUUID,
+		Email:          u.Email,
+		Role:           u.Role,
+		CanProducao:    u.CanProducao,
+		CanPerformance: u.CanPerformance,
+	}, nil
+}
+
+func (s *AdminService) ListUsuarios(ctx context.Context, page PageParams) (dto.Page[dto.UsuarioOutput], error) {
+	items, total, err := s.usuarios.List(ctx, page)
+	if err != nil {
+		return dto.Page[dto.UsuarioOutput]{}, err
+	}
+	out := make([]dto.UsuarioOutput, len(items))
+	for i, u := range items {
+		out[i] = dto.UsuarioOutput{
+			UUID:           u.UUID,
+			ClienteUUID:    u.ClienteUUID,
+			Email:          u.Email,
+			Role:           u.Role,
+			CanProducao:    u.CanProducao,
+			CanPerformance: u.CanPerformance,
+		}
+	}
+	return dto.Page[dto.UsuarioOutput]{
+		Items:  out,
+		Total:  total,
+		Limit:  page.Limit,
+		Offset: page.Offset,
+	}, nil
+}
+
+func (s *AdminService) UpdateUsuario(ctx context.Context, id string, input dto.UsuarioUpdateInput) (dto.UsuarioOutput, error) {
+	u, err := s.usuarios.GetByUUID(ctx, id)
+	if err != nil {
+		return dto.UsuarioOutput{}, err
+	}
+	if u == nil {
+		return dto.UsuarioOutput{}, errors.New("usuario not found")
+	}
+
+	if input.CanProducao != nil {
+		u.CanProducao = *input.CanProducao
+	}
+	if input.CanPerformance != nil {
+		u.CanPerformance = *input.CanPerformance
+	}
+
+	if err := s.usuarios.Update(ctx, u); err != nil {
+		return dto.UsuarioOutput{}, err
+	}
+
+	return dto.UsuarioOutput{
+		UUID:           u.UUID,
+		ClienteUUID:    u.ClienteUUID,
+		Email:          u.Email,
+		Role:           u.Role,
+		CanProducao:    u.CanProducao,
+		CanPerformance: u.CanPerformance,
+	}, nil
 }
 

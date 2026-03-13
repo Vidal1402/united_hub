@@ -84,3 +84,12 @@ type NotificacaoRepository interface {
 	Enviar(ctx context.Context, n *domain.Notificacao) error
 }
 
+type UsuarioRepository interface {
+	GetByUUID(ctx context.Context, uuid string) (*domain.Usuario, error)
+	GetByEmail(ctx context.Context, email string) (*domain.Usuario, error)
+	List(ctx context.Context, pag PageParams) ([]domain.Usuario, int64, error)
+	Create(ctx context.Context, u *domain.Usuario) error
+	Update(ctx context.Context, u *domain.Usuario) error
+}
+
+
