@@ -22,8 +22,21 @@ func GetClaims(r *http.Request) (auth.Claims, bool) {
   return c, ok
 }
 
-// SkipAuthForOPTIONS responde 204 ao preflight OPTIONS sem validar token.
-// Deve ser usado antes de RequireJWT/RequireRole para que o browser não receba 401 no preflight.
+// PreflightNoAuth responde 204 a QUALQUER requisição OPTIONS (preflight) na raiz do router.
+// Colocado após o CORS e antes das rotas, garante que o preflight nunca exija token (evita 401/405).
+// Ver BACKEND_CORS.md — seção "OPTIONS sem token".
+func PreflightNoAuth(next http.Handler) http.Handler {
+  return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    if r.Method == http.MethodOptions {
+      w.WriteHeader(http.StatusNoContent)
+      return
+    }
+    next.ServeHTTP(w, r)
+  })
+}
+
+// SkipAuthForOPTIONS responde 204 ao preflight OPTIONS sem validar token (no grupo admin/cliente).
+// Redundante se PreflightNoAuth estiver na raiz; mantido por compatibilidade.
 func SkipAuthForOPTIONS(next http.Handler) http.Handler {
   return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     if r.Method == http.MethodOptions {

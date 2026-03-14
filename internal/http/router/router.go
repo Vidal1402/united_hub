@@ -66,6 +66,8 @@ func New(d Deps) http.Handler {
 		AllowCredentials: false,
 		MaxAge:           86400,
 	}))
+	// OPTIONS (preflight) responde 204 na raiz, sem exigir token — antes de qualquer rota protegida
+	r.Use(middleware.PreflightNoAuth)
 
 	h := health.New()
 	r.Get("/healthz", h.Get)
