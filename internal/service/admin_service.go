@@ -620,6 +620,7 @@ func (s *AdminService) CreateMaterialPasta(ctx context.Context, input map[string
 	p := &domain.MaterialPasta{
 		UUID:        uuid.New().String(),
 		ClienteUUID: str("cliente_uuid"),
+		ParentUUID:  str("parent_uuid"), // opcional: se presente, pasta é subpasta
 		Nome:        str("nome"),
 		Icone:       str("icone"),
 	}

@@ -5,6 +5,7 @@ import "time"
 type MaterialPasta struct {
 	UUID        string    `bson:"uuid" json:"uuid"`
 	ClienteUUID string    `bson:"cliente_uuid" json:"cliente_uuid"`
+	ParentUUID  string    `bson:"parent_uuid" json:"parent_uuid"` // opcional: subpasta desta pasta
 	Nome        string    `bson:"nome" json:"nome"`
 	Icone       string    `bson:"icone" json:"icone"`
 	CreatedAt   time.Time `bson:"created_at" json:"created_at"`
