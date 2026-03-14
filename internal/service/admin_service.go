@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"backend_united_hub/internal/domain"
 	"backend_united_hub/internal/http/dto"
@@ -276,7 +277,54 @@ func (s *AdminService) ListPagar(ctx context.Context, page PageParams) (dto.Page
 }
 
 func (s *AdminService) CreateLancamento(ctx context.Context, input any) (any, error) {
-	return map[string]any{}, nil
+	m, _ := input.(map[string]any)
+	str := func(k string) string {
+		if v, ok := m[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	valorCentavos := int64(0)
+	if v, ok := m["valor_centavos"]; ok && v != nil {
+		switch n := v.(type) {
+		case float64:
+			valorCentavos = int64(n)
+		case int:
+			valorCentavos = int64(n)
+		case int64:
+			valorCentavos = n
+		}
+	}
+	if valorCentavos == 0 && m["valor"] != nil {
+		if n, ok := m["valor"].(float64); ok {
+			valorCentavos = int64(n * 100)
+		}
+	}
+	var vencimento time.Time
+	if s := str("vencimento"); len(s) >= 10 {
+		vencimento, _ = time.Parse("2006-01-02", s[:10])
+	}
+	if vencimento.IsZero() {
+		vencimento = time.Now().UTC().AddDate(0, 1, 0)
+	}
+	rec := &domain.Recebivel{
+		UUID:        uuid.New().String(),
+		ClienteUUID: str("cliente_uuid"),
+		Descricao:   str("descricao"),
+		Valor:       valorCentavos,
+		Vencimento:  vencimento,
+		Status:      "pendente",
+		Plano:       str("plano"),
+	}
+	if rec.Descricao == "" {
+		rec.Descricao = "Lançamento"
+	}
+	if err := s.financeiro.CreateRecebivel(ctx, rec); err != nil {
+		return nil, err
+	}
+	return rec, nil
 }
 
 func (s *AdminService) MarcarRecebivelPago(ctx context.Context, id string) error {
@@ -302,12 +350,125 @@ func (s *AdminService) ListProdutosPorFamilia(ctx context.Context, familia strin
 	}, nil
 }
 
-func (s *AdminService) CreateProduto(ctx context.Context, input any) (any, error) {
-	return map[string]any{}, nil
+func (s *AdminService) CreateProduto(ctx context.Context, familia string, input any) (any, error) {
+	m, _ := input.(map[string]any)
+	str := func(k string) string {
+		if v, ok := m[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	precoCentavos := int64(0)
+	if v, ok := m["price"]; ok && v != nil {
+		switch n := v.(type) {
+		case float64:
+			precoCentavos = int64(n * 100)
+		case int:
+			precoCentavos = int64(n) * 100
+		case int64:
+			precoCentavos = n * 100
+		}
+	}
+	if precoCentavos == 0 && m["preco_centavos"] != nil {
+		if n, ok := m["preco_centavos"].(float64); ok {
+			precoCentavos = int64(n)
+		}
+	}
+	featuresStr := str("features")
+	var features []string
+	if featuresStr != "" {
+		for _, line := range splitLines(featuresStr) {
+			if line != "" {
+				features = append(features, line)
+			}
+		}
+	}
+	id := uuid.New().String()
+	slug := str("slug")
+	if slug == "" {
+		slug = id[:8]
+	}
+	p := &domain.Produto{
+		UUID:      id,
+		Familia:   familia,
+		Slug:      slug,
+		Nome:     str("name"),
+		Preco:     precoCentavos,
+		Badge:     str("badge"),
+		Descricao: str("descricao"),
+		Features:  features,
+	}
+	if p.Nome == "" {
+		p.Nome = str("nome")
+	}
+	if err := s.produtos.Create(ctx, p); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func splitLines(s string) []string {
+	var out []string
+	start := 0
+	for i := 0; i <= len(s); i++ {
+		if i == len(s) || s[i] == '\n' {
+			out = append(out, s[start:i])
+			start = i + 1
+		}
+	}
+	return out
 }
 
 func (s *AdminService) UpdateProduto(ctx context.Context, id string, input any) (any, error) {
-	return map[string]any{}, nil
+	existing, err := s.produtos.GetByUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, errors.New("produto não encontrado")
+	}
+	m, _ := input.(map[string]any)
+	str := func(k string) string {
+		if v, ok := m[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	if v := str("name"); v != "" {
+		existing.Nome = v
+	} else if v := str("nome"); v != "" {
+		existing.Nome = v
+	}
+	if v, ok := m["price"]; ok && v != nil {
+		if n, ok := v.(float64); ok {
+			existing.Preco = int64(n * 100)
+		}
+	}
+	if m["preco_centavos"] != nil {
+		if n, ok := m["preco_centavos"].(float64); ok {
+			existing.Preco = int64(n)
+		}
+	}
+	existing.Badge = str("badge")
+	existing.Descricao = str("descricao")
+	featuresStr := str("features")
+	if featuresStr != "" {
+		var features []string
+		for _, line := range splitLines(featuresStr) {
+			if line != "" {
+				features = append(features, line)
+			}
+		}
+		existing.Features = features
+	}
+	if err := s.produtos.Update(ctx, existing); err != nil {
+		return nil, err
+	}
+	return existing, nil
 }
 
 func (s *AdminService) DeleteProduto(ctx context.Context, id string) error {
@@ -357,7 +518,27 @@ func (s *AdminService) ListNotificacoesEnviadas(ctx context.Context, page PagePa
 }
 
 func (s *AdminService) EnviarNotificacao(ctx context.Context, input any) error {
-	return nil
+	m, _ := input.(map[string]any)
+	str := func(k string) string {
+		if v, ok := m[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	n := &domain.Notificacao{
+		UUID:     uuid.New().String(),
+		Titulo:   str("titulo"),
+		Target:   str("target"),
+		Canal:    str("canal"),
+		Tipo:     "sistema",
+		Conteudo: str("conteudo"),
+	}
+	if n.Titulo == "" {
+		n.Titulo = "Notificação"
+	}
+	return s.notifs.Enviar(ctx, n)
 }
 
 // Relatórios / Comercial

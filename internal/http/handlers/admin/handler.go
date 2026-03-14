@@ -233,12 +233,17 @@ func (h *Handler) ListProdutosPorFamilia(w http.ResponseWriter, r *http.Request)
 
 func (h *Handler) CreateProduto(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	familia := chi.URLParam(r, "familia")
+	if familia == "" {
+		response.Error(w, http.StatusBadRequest, "familia is required", nil)
+		return
+	}
 	var input map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid body", nil)
 		return
 	}
-	result, err := h.svc.CreateProduto(ctx, input)
+	result, err := h.svc.CreateProduto(ctx, familia, input)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
 		return

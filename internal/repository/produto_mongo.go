@@ -20,6 +20,18 @@ func NewMongoProdutoRepository(db *mongo.Database) *MongoProdutoRepository {
 	}
 }
 
+func (r *MongoProdutoRepository) GetByUUID(ctx context.Context, uuid string) (*domain.Produto, error) {
+	var p domain.Produto
+	err := r.coll.FindOne(ctx, bson.M{"uuid": uuid}).Decode(&p)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
 func (r *MongoProdutoRepository) ListByFamilia(ctx context.Context, familia string, pag PageParams) ([]domain.Produto, int64, error) {
 	filter := bson.M{"familia": familia}
 	opts := options.Find().
@@ -61,13 +73,14 @@ func (r *MongoProdutoRepository) Update(ctx context.Context, p *domain.Produto) 
 
 	update := bson.M{
 		"$set": bson.M{
-			"familia":    p.Familia,
-			"slug":       p.Slug,
-			"nome":       p.Nome,
+			"familia":        p.Familia,
+			"slug":           p.Slug,
+			"nome":           p.Nome,
 			"preco_centavos": p.Preco,
-			"descricao":  p.Descricao,
-			"features":   p.Features,
-			"updated_at": p.UpdatedAt,
+			"badge":          p.Badge,
+			"descricao":      p.Descricao,
+			"features":       p.Features,
+			"updated_at":     p.UpdatedAt,
 		},
 	}
 	_, err := r.coll.UpdateOne(ctx, bson.M{"uuid": p.UUID}, update)

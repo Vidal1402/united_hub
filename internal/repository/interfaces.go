@@ -68,6 +68,7 @@ type ChamadoRepository interface {
 }
 
 type ProdutoRepository interface {
+	GetByUUID(ctx context.Context, uuid string) (*domain.Produto, error)
 	ListByFamilia(ctx context.Context, familia string, pag PageParams) ([]domain.Produto, int64, error)
 	Create(ctx context.Context, p *domain.Produto) error
 	Update(ctx context.Context, p *domain.Produto) error
