@@ -77,8 +77,32 @@ func (s *AdminService) ListClientes(ctx context.Context, filtro any, page PagePa
 	}, nil
 }
 
-func (s *AdminService) CreateCliente(ctx context.Context, input dto.CreateClienteInput) (any, error) {
-	return map[string]any{}, nil
+func (s *AdminService) CreateCliente(ctx context.Context, input dto.CreateClienteInput) (dto.ClienteOutput, error) {
+	c := &domain.Cliente{
+		UUID:      uuid.New().String(),
+		Nome:      input.Nome,
+		Email:     input.Email,
+		Segmento:  input.Segmento,
+		Plano:     input.Plano,
+		Status:    input.Status,
+		Cidade:    input.Cidade,
+		OwnerUUID: input.OwnerUUID,
+	}
+	if err := s.clientes.Create(ctx, c); err != nil {
+		return dto.ClienteOutput{}, err
+	}
+	return dto.ClienteOutput{
+		UUID:      c.UUID,
+		Nome:      c.Nome,
+		Email:     c.Email,
+		Segmento:  c.Segmento,
+		Plano:     c.Plano,
+		Status:    c.Status,
+		Cidade:    c.Cidade,
+		OwnerUUID: c.OwnerUUID,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}, nil
 }
 
 func (s *AdminService) GetCliente(ctx context.Context, id string) (any, error) {
@@ -89,8 +113,36 @@ func (s *AdminService) GetCliente(ctx context.Context, id string) (any, error) {
 	return c, nil
 }
 
-func (s *AdminService) UpdateCliente(ctx context.Context, id string, input dto.UpdateClienteInput) (any, error) {
-	return map[string]any{}, nil
+func (s *AdminService) UpdateCliente(ctx context.Context, id string, input dto.UpdateClienteInput) (dto.ClienteOutput, error) {
+	existing, err := s.clientes.GetByUUID(ctx, id)
+	if err != nil {
+		return dto.ClienteOutput{}, err
+	}
+	if existing == nil {
+		return dto.ClienteOutput{}, errors.New("cliente not found")
+	}
+	existing.Nome = input.Nome
+	existing.Email = input.Email
+	existing.Segmento = input.Segmento
+	existing.Plano = input.Plano
+	existing.Status = input.Status
+	existing.Cidade = input.Cidade
+	existing.OwnerUUID = input.OwnerUUID
+	if err := s.clientes.Update(ctx, existing); err != nil {
+		return dto.ClienteOutput{}, err
+	}
+	return dto.ClienteOutput{
+		UUID:      existing.UUID,
+		Nome:      existing.Nome,
+		Email:     existing.Email,
+		Segmento:  existing.Segmento,
+		Plano:     existing.Plano,
+		Status:    existing.Status,
+		Cidade:    existing.Cidade,
+		OwnerUUID: existing.OwnerUUID,
+		CreatedAt: existing.CreatedAt,
+		UpdatedAt: existing.UpdatedAt,
+	}, nil
 }
 
 func (s *AdminService) DesativarCliente(ctx context.Context, id string) error {

@@ -10,7 +10,7 @@ type ClienteInput struct {
 	Plano     string `json:"plano" validate:"required"`
 	Status    string `json:"status" validate:"required"`
 	Cidade    string `json:"cidade" validate:"required"`
-	OwnerUUID string `json:"owner_uuid" validate:"required,uuid4"`
+	OwnerUUID string `json:"owner_uuid" validate:"omitempty,uuid4"` // opcional; front pode enviar vazio
 }
 
 // ClienteOutput representa o cliente retornado na API.
