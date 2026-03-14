@@ -2,6 +2,8 @@ package router
 
 import (
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"backend_united_hub/internal/auth"
@@ -20,6 +22,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// origens CORS permitidas: dev (localhost) + produção (env CORS_ORIGINS ou vazio)
+func corsOrigins() []string {
+	base := []string{
+		"http://localhost:5173",
+		"http://localhost:5174",
+		"http://127.0.0.1:5173",
+		"http://127.0.0.1:5174",
+	}
+	if s := os.Getenv("CORS_ORIGINS"); s != "" {
+		// CORS_ORIGINS pode ser "https://meu-front.onrender.com" ou várias separadas por vírgula
+		for _, o := range strings.Split(s, ",") {
+			o = strings.TrimSpace(o)
+			if o != "" {
+				base = append(base, o)
+			}
+		}
+	}
+	return base
+}
+
 type Deps struct {
 	JWTSecret      string
 	RequestTimeout time.Duration
@@ -37,12 +59,12 @@ func New(d Deps) http.Handler {
 	r.Use(middleware.WithTimeout(d.RequestTimeout))
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedOrigins:   corsOrigins(),
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
-		MaxAge:           300,
+		MaxAge:           86400,
 	}))
 
 	h := health.New()
