@@ -20,6 +20,9 @@ type AdminService struct {
 	alertas    repository.AlertaRepository
 	notifs     repository.NotificacaoRepository
 	relatorios repository.RelatorioRepository
+	materiais  repository.MaterialRepository
+	reunioes   repository.ReuniaoRepository
+	chamados   repository.ChamadoRepository
 	kanban     repository.KanbanRepository
 	usuarios   repository.UsuarioRepository
 }
@@ -32,6 +35,9 @@ func NewAdminService(
 	alertas repository.AlertaRepository,
 	notifs repository.NotificacaoRepository,
 	relatorios repository.RelatorioRepository,
+	materiais repository.MaterialRepository,
+	reunioes repository.ReuniaoRepository,
+	chamados repository.ChamadoRepository,
 	kanban repository.KanbanRepository,
 	usuarios repository.UsuarioRepository,
 ) *AdminService {
@@ -43,6 +49,9 @@ func NewAdminService(
 		alertas:    alertas,
 		notifs:     notifs,
 		relatorios: relatorios,
+		materiais:  materiais,
+		reunioes:   reunioes,
+		chamados:   chamados,
 		kanban:     kanban,
 		usuarios:   usuarios,
 	}
@@ -545,6 +554,268 @@ func (s *AdminService) EnviarNotificacao(ctx context.Context, input any) error {
 
 func (s *AdminService) ListRelatoriosAdmin(ctx context.Context, page PageParams) (dto.Page[any], error) {
 	items, total, err := s.relatorios.ListAdmin(ctx, page)
+	if err != nil {
+		return dto.Page[any]{}, err
+	}
+	out := make([]any, len(items))
+	for i, it := range items {
+		out[i] = it
+	}
+	return dto.Page[any]{
+		Items:  out,
+		Total:  total,
+		Limit:  page.Limit,
+		Offset: page.Offset,
+	}, nil
+}
+
+func (s *AdminService) CreateRelatorio(ctx context.Context, input map[string]any) (any, error) {
+	str := func(k string) string {
+		if v, ok := input[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	paginas := 0
+	if v, ok := input["paginas"]; ok && v != nil {
+		switch n := v.(type) {
+		case float64:
+			paginas = int(n)
+		case int:
+			paginas = n
+		}
+	}
+	r := &domain.Relatorio{
+		UUID:        uuid.New().String(),
+		ClienteUUID: str("cliente_uuid"),
+		Titulo:      str("titulo"),
+		Tipo:        str("tipo"),
+		Periodo:     str("periodo"),
+		FileURL:     str("file_url"),
+		Paginas:     paginas,
+		OwnerUUID:   str("owner_uuid"),
+	}
+	if r.Tipo == "" {
+		r.Tipo = "Mensal"
+	}
+	if err := s.relatorios.Create(ctx, r); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+// Materiais (pastas e arquivos)
+
+func (s *AdminService) CreateMaterialPasta(ctx context.Context, input map[string]any) (any, error) {
+	str := func(k string) string {
+		if v, ok := input[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	p := &domain.MaterialPasta{
+		UUID:        uuid.New().String(),
+		ClienteUUID: str("cliente_uuid"),
+		Nome:        str("nome"),
+		Icone:       str("icone"),
+	}
+	if err := s.materiais.CreatePasta(ctx, p); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func (s *AdminService) CreateMaterialArquivo(ctx context.Context, input map[string]any) (any, error) {
+	str := func(k string) string {
+		if v, ok := input[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	tamanho := int64(0)
+	if v, ok := input["tamanho"]; ok && v != nil {
+		switch n := v.(type) {
+		case float64:
+			tamanho = int64(n)
+		case int:
+			tamanho = int64(n)
+		case int64:
+			tamanho = n
+		}
+	}
+	a := &domain.MaterialArquivo{
+		UUID:        uuid.New().String(),
+		ClienteUUID: str("cliente_uuid"),
+		PastaUUID:   str("pasta_uuid"),
+		Nome:        str("nome"),
+		URL:         str("url"),
+		Extensao:    str("extensao"),
+		Tamanho:     tamanho,
+		Data:        time.Now().UTC(),
+	}
+	if err := s.materiais.CreateArquivo(ctx, a); err != nil {
+		return nil, err
+	}
+	return a, nil
+}
+
+func (s *AdminService) ListPastasAdmin(ctx context.Context, clienteUUID string, page PageParams) (dto.Page[any], error) {
+	items, total, err := s.materiais.ListPastasByCliente(ctx, clienteUUID, page)
+	if err != nil {
+		return dto.Page[any]{}, err
+	}
+	out := make([]any, len(items))
+	for i, it := range items {
+		out[i] = it
+	}
+	return dto.Page[any]{
+		Items:  out,
+		Total:  total,
+		Limit:  page.Limit,
+		Offset: page.Offset,
+	}, nil
+}
+
+func (s *AdminService) ListArquivosAdmin(ctx context.Context, clienteUUID string, page PageParams) (dto.Page[any], error) {
+	items, total, err := s.materiais.ListArquivosByCliente(ctx, clienteUUID, page)
+	if err != nil {
+		return dto.Page[any]{}, err
+	}
+	out := make([]any, len(items))
+	for i, it := range items {
+		out[i] = it
+	}
+	return dto.Page[any]{
+		Items:  out,
+		Total:  total,
+		Limit:  page.Limit,
+		Offset: page.Offset,
+	}, nil
+}
+
+// Reuniões
+
+func (s *AdminService) CreateReuniao(ctx context.Context, input map[string]any) (any, error) {
+	str := func(k string) string {
+		if v, ok := input[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	duracaoMin := 0
+	if v, ok := input["duracao_min"]; ok && v != nil {
+		switch n := v.(type) {
+		case float64:
+			duracaoMin = int(n)
+		case int:
+			duracaoMin = n
+		}
+	}
+	var pauta []string
+	if v, ok := input["pauta"]; ok && v != nil {
+		switch arr := v.(type) {
+		case []interface{}:
+			for _, x := range arr {
+				if s, ok := x.(string); ok {
+					pauta = append(pauta, s)
+				}
+			}
+		case []string:
+			pauta = arr
+		case string:
+			for _, line := range splitLines(arr) {
+				if line != "" {
+					pauta = append(pauta, line)
+				}
+			}
+		}
+	}
+	dataHora := time.Now().UTC()
+	if s := str("data_hora"); s != "" {
+		// ISO ou "2006-01-02T15:04:05"
+		for _, layout := range []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02 15:04:05", "2006-01-02"} {
+			if t, err := time.Parse(layout, s); err == nil {
+				dataHora = t.UTC()
+				break
+			}
+		}
+	}
+	status := "futura"
+	if dataHora.Before(time.Now().UTC()) {
+		status = "historico"
+	}
+	reun := &domain.Reuniao{
+		UUID:        uuid.New().String(),
+		ClienteUUID: str("cliente_uuid"),
+		Titulo:      str("titulo"),
+		DataHora:    dataHora,
+		Via:         str("via"),
+		OwnerUUID:   str("owner_uuid"),
+		Pauta:       pauta,
+		Status:      status,
+		DuracaoMin:  duracaoMin,
+	}
+	if err := s.reunioes.Create(ctx, reun); err != nil {
+		return nil, err
+	}
+	return reun, nil
+}
+
+func (s *AdminService) ListReunioesAdmin(ctx context.Context, page PageParams) (dto.Page[any], error) {
+	items, total, err := s.reunioes.ListAdmin(ctx, page)
+	if err != nil {
+		return dto.Page[any]{}, err
+	}
+	out := make([]any, len(items))
+	for i, it := range items {
+		out[i] = it
+	}
+	return dto.Page[any]{
+		Items:  out,
+		Total:  total,
+		Limit:  page.Limit,
+		Offset: page.Offset,
+	}, nil
+}
+
+// Chamados
+
+func (s *AdminService) CreateChamado(ctx context.Context, input map[string]any) (any, error) {
+	str := func(k string) string {
+		if v, ok := input[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	c := &domain.Chamado{
+		UUID:        uuid.New().String(),
+		ClienteUUID: str("cliente_uuid"),
+		Titulo:      str("titulo"),
+		Descricao:   str("descricao"),
+		Categoria:   str("categoria"),
+		Status:      "aberto",
+	}
+	if c.Categoria == "" {
+		c.Categoria = "Suporte"
+	}
+	if err := s.chamados.Create(ctx, c); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func (s *AdminService) ListChamadosAdmin(ctx context.Context, page PageParams) (dto.Page[any], error) {
+	items, total, err := s.chamados.ListAdmin(ctx, page)
 	if err != nil {
 		return dto.Page[any]{}, err
 	}

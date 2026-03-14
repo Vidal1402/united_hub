@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"backend_united_hub/internal/domain"
 	"go.mongodb.org/mongo-driver/bson"
@@ -67,5 +68,15 @@ func (r *MongoRelatorioRepository) ListAdmin(ctx context.Context, pag PageParams
 		return nil, 0, err
 	}
 	return out, total, nil
+}
+
+func (r *MongoRelatorioRepository) Create(ctx context.Context, rel *domain.Relatorio) error {
+	now := time.Now().UTC()
+	if rel.CreatedAt.IsZero() {
+		rel.CreatedAt = now
+	}
+	rel.UpdatedAt = now
+	_, err := r.coll.InsertOne(ctx, rel)
+	return err
 }
 

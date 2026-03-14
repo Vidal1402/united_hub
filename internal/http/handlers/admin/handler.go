@@ -343,6 +343,147 @@ func (h *Handler) ListRelatoriosAdmin(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, result)
 }
 
+func (h *Handler) CreateRelatorio(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.CreateRelatorio(ctx, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
+}
+
+func (h *Handler) CreateMaterialPasta(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.CreateMaterialPasta(ctx, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
+}
+
+func (h *Handler) CreateMaterialArquivo(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.CreateMaterialArquivo(ctx, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
+}
+
+func (h *Handler) ListPastasAdmin(w http.ResponseWriter, r *http.Request) {
+	pag := pagination.Parse(r, 20, 100)
+	clienteUUID := r.URL.Query().Get("cliente_uuid")
+	if clienteUUID == "" {
+		response.Error(w, http.StatusBadRequest, "cliente_uuid is required", nil)
+		return
+	}
+	ctx := r.Context()
+	result, err := h.svc.ListPastasAdmin(ctx, clienteUUID, service.PageParams{
+		Limit:  pag.Limit,
+		Offset: pag.Offset,
+	})
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) ListArquivosAdmin(w http.ResponseWriter, r *http.Request) {
+	pag := pagination.Parse(r, 20, 100)
+	clienteUUID := r.URL.Query().Get("cliente_uuid")
+	if clienteUUID == "" {
+		response.Error(w, http.StatusBadRequest, "cliente_uuid is required", nil)
+		return
+	}
+	ctx := r.Context()
+	result, err := h.svc.ListArquivosAdmin(ctx, clienteUUID, service.PageParams{
+		Limit:  pag.Limit,
+		Offset: pag.Offset,
+	})
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) ListReunioesAdmin(w http.ResponseWriter, r *http.Request) {
+	pag := pagination.Parse(r, 50, 100)
+	ctx := r.Context()
+	result, err := h.svc.ListReunioesAdmin(ctx, service.PageParams{
+		Limit:  pag.Limit,
+		Offset: pag.Offset,
+	})
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) CreateReuniao(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.CreateReuniao(ctx, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
+}
+
+func (h *Handler) ListChamadosAdmin(w http.ResponseWriter, r *http.Request) {
+	pag := pagination.Parse(r, 50, 100)
+	ctx := r.Context()
+	result, err := h.svc.ListChamadosAdmin(ctx, service.PageParams{
+		Limit:  pag.Limit,
+		Offset: pag.Offset,
+	})
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) CreateChamado(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.CreateChamado(ctx, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
+}
+
 func (h *Handler) GetComercial(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	result, err := h.svc.GetComercial(ctx)

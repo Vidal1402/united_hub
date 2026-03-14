@@ -85,6 +85,9 @@ func New(d Deps) http.Handler {
 		alertaRepo,
 		notificacaoRepo,
 		relatorioRepo,
+		materialRepo,
+		reuniaoRepo,
+		chamadoRepo,
 		kanbanRepo,
 		usuarioRepo,
 	)
@@ -176,6 +179,19 @@ func New(d Deps) http.Handler {
 			ar.Post("/notificacoes/enviar", adminH.EnviarNotificacao)
 
 			ar.Get("/relatorios", adminH.ListRelatoriosAdmin)
+			ar.Post("/relatorios", adminH.CreateRelatorio)
+
+			ar.Post("/materiais/pastas", adminH.CreateMaterialPasta)
+			ar.Post("/materiais/arquivos", adminH.CreateMaterialArquivo)
+			ar.Get("/materiais/pastas", adminH.ListPastasAdmin)
+			ar.Get("/materiais/arquivos", adminH.ListArquivosAdmin)
+
+			ar.Get("/reunioes", adminH.ListReunioesAdmin)
+			ar.Post("/reunioes", adminH.CreateReuniao)
+
+			ar.Get("/chamados", adminH.ListChamadosAdmin)
+			ar.Post("/chamados", adminH.CreateChamado)
+
 			ar.Get("/comercial", adminH.GetComercial)
 
 			ar.Post("/usuarios", adminH.CreateUsuario)

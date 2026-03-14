@@ -72,6 +72,16 @@ func (r *MongoMaterialRepository) ListArquivosByCliente(ctx context.Context, cli
 	return out, total, nil
 }
 
+func (r *MongoMaterialRepository) CreatePasta(ctx context.Context, p *domain.MaterialPasta) error {
+	now := time.Now().UTC()
+	if p.CreatedAt.IsZero() {
+		p.CreatedAt = now
+	}
+	p.UpdatedAt = now
+	_, err := r.collPastas.InsertOne(ctx, p)
+	return err
+}
+
 func (r *MongoMaterialRepository) CreateArquivo(ctx context.Context, a *domain.MaterialArquivo) error {
 	now := time.Now().UTC()
 	if a.CreatedAt.IsZero() {

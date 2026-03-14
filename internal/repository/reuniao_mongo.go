@@ -78,3 +78,37 @@ func (r *MongoReuniaoRepository) ListHistoricoByCliente(ctx context.Context, cli
 	return out, total, nil
 }
 
+func (r *MongoReuniaoRepository) ListAdmin(ctx context.Context, pag PageParams) ([]domain.Reuniao, int64, error) {
+	opts := options.Find().
+		SetLimit(int64(pag.Limit)).
+		SetSkip(int64(pag.Offset)).
+		SetSort(bson.D{{Key: "data_hora", Value: -1}})
+
+	cur, err := r.coll.Find(ctx, bson.M{}, opts)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer cur.Close(ctx)
+
+	var out []domain.Reuniao
+	if err := cur.All(ctx, &out); err != nil {
+		return nil, 0, err
+	}
+
+	total, err := r.coll.CountDocuments(ctx, bson.M{})
+	if err != nil {
+		return nil, 0, err
+	}
+	return out, total, nil
+}
+
+func (r *MongoReuniaoRepository) Create(ctx context.Context, reun *domain.Reuniao) error {
+	now := time.Now().UTC()
+	if reun.CreatedAt.IsZero() {
+		reun.CreatedAt = now
+	}
+	reun.UpdatedAt = now
+	_, err := r.coll.InsertOne(ctx, reun)
+	return err
+}
+

@@ -36,17 +36,21 @@ type KanbanRepository interface {
 type RelatorioRepository interface {
 	ListByCliente(ctx context.Context, clienteUUID string, pag PageParams) ([]domain.Relatorio, int64, error)
 	ListAdmin(ctx context.Context, pag PageParams) ([]domain.Relatorio, int64, error)
+	Create(ctx context.Context, r *domain.Relatorio) error
 }
 
 type MaterialRepository interface {
 	ListPastasByCliente(ctx context.Context, clienteUUID string, pag PageParams) ([]domain.MaterialPasta, int64, error)
 	ListArquivosByCliente(ctx context.Context, clienteUUID string, pag PageParams) ([]domain.MaterialArquivo, int64, error)
+	CreatePasta(ctx context.Context, p *domain.MaterialPasta) error
 	CreateArquivo(ctx context.Context, a *domain.MaterialArquivo) error
 }
 
 type ReuniaoRepository interface {
 	ListProximasByCliente(ctx context.Context, clienteUUID string, pag PageParams) ([]domain.Reuniao, int64, error)
 	ListHistoricoByCliente(ctx context.Context, clienteUUID string, pag PageParams) ([]domain.Reuniao, int64, error)
+	ListAdmin(ctx context.Context, pag PageParams) ([]domain.Reuniao, int64, error)
+	Create(ctx context.Context, r *domain.Reuniao) error
 }
 
 type FinanceiroRepository interface {
@@ -64,6 +68,7 @@ type CursoRepository interface {
 
 type ChamadoRepository interface {
 	ListByCliente(ctx context.Context, clienteUUID string, pag PageParams) ([]domain.Chamado, int64, error)
+	ListAdmin(ctx context.Context, pag PageParams) ([]domain.Chamado, int64, error)
 	Create(ctx context.Context, c *domain.Chamado) error
 }
 

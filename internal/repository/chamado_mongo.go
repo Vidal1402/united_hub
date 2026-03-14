@@ -45,6 +45,30 @@ func (r *MongoChamadoRepository) ListByCliente(ctx context.Context, clienteUUID 
 	return out, total, nil
 }
 
+func (r *MongoChamadoRepository) ListAdmin(ctx context.Context, pag PageParams) ([]domain.Chamado, int64, error) {
+	opts := options.Find().
+		SetLimit(int64(pag.Limit)).
+		SetSkip(int64(pag.Offset)).
+		SetSort(bson.D{{Key: "criado_em", Value: -1}})
+
+	cur, err := r.coll.Find(ctx, bson.M{}, opts)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer cur.Close(ctx)
+
+	var out []domain.Chamado
+	if err := cur.All(ctx, &out); err != nil {
+		return nil, 0, err
+	}
+
+	total, err := r.coll.CountDocuments(ctx, bson.M{})
+	if err != nil {
+		return nil, 0, err
+	}
+	return out, total, nil
+}
+
 func (r *MongoChamadoRepository) Create(ctx context.Context, c *domain.Chamado) error {
 	now := time.Now().UTC()
 	if c.CriadoEm.IsZero() {
