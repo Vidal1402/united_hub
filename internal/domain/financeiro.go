@@ -28,13 +28,13 @@ type Recebivel struct {
 }
 
 type Pagamento struct {
-	UUID       string    `bson:"uuid"`
-	Descricao  string    `bson:"descricao"`
-	Valor      int64     `bson:"valor_centavos"`
-	Vencimento time.Time `bson:"vencimento"`
-	Status     string    `bson:"status"` // Pago/Pendente
-	Categoria  string    `bson:"categoria"`
-	CreatedAt  time.Time `bson:"created_at"`
-	UpdatedAt  time.Time `bson:"updated_at"`
+	UUID       string    `bson:"uuid" json:"uuid"`
+	Descricao  string    `bson:"descricao" json:"descricao"`
+	Valor      int64     `bson:"valor_centavos" json:"valor_centavos"`
+	Vencimento time.Time `bson:"vencimento" json:"vencimento"`
+	Status     string    `bson:"status" json:"status"` // Pago/Pendente
+	Categoria  string    `bson:"categoria" json:"categoria"`
+	CreatedAt  time.Time `bson:"created_at" json:"created_at"`
+	UpdatedAt  time.Time `bson:"updated_at" json:"updated_at"`
 }
 

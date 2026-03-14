@@ -127,6 +127,7 @@ func New(d Deps) http.Handler {
 		api.With(middleware.RequireJWT(d.JWTSecret)).Get("/auth/me", authH.Me)
 
 		api.Route("/cliente", func(cr chi.Router) {
+			cr.Use(middleware.SkipAuthForOPTIONS)
 			cr.Use(middleware.RequireJWT(d.JWTSecret))
 			cr.Use(middleware.RequireRole(auth.RoleClient))
 
@@ -168,6 +169,7 @@ func New(d Deps) http.Handler {
 		})
 
 		api.Route("/admin", func(ar chi.Router) {
+			ar.Use(middleware.SkipAuthForOPTIONS)
 			ar.Use(middleware.RequireJWT(d.JWTSecret))
 			ar.Use(middleware.RequireRole(auth.RoleAdmin))
 
@@ -187,6 +189,7 @@ func New(d Deps) http.Handler {
 
 			ar.Get("/financeiro/receber", adminH.ListReceber)
 			ar.Get("/financeiro/pagar", adminH.ListPagar)
+			ar.Post("/financeiro/pagar", adminH.CreatePagar)
 			ar.Post("/financeiro/lancamento", adminH.CreateLancamento)
 			ar.Put("/financeiro/receber/{id}/marcar-pago", adminH.MarcarRecebivelPago)
 

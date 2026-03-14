@@ -61,6 +61,7 @@ type FinanceiroRepository interface {
 	ListRecebiveis(ctx context.Context, pag PageParams) ([]domain.Recebivel, int64, error)
 	ListPagamentos(ctx context.Context, pag PageParams) ([]domain.Pagamento, int64, error)
 	CreateRecebivel(ctx context.Context, r *domain.Recebivel) error
+	CreatePagamento(ctx context.Context, p *domain.Pagamento) error
 	MarkRecebivelPago(ctx context.Context, uuid string) error
 }
 

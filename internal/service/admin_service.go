@@ -285,6 +285,63 @@ func (s *AdminService) ListPagar(ctx context.Context, page PageParams) (dto.Page
 	}, nil
 }
 
+func (s *AdminService) CreatePagar(ctx context.Context, input map[string]any) (any, error) {
+	str := func(k string) string {
+		if v, ok := input[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	valorCentavos := int64(0)
+	if v, ok := input["valor_centavos"]; ok && v != nil {
+		switch n := v.(type) {
+		case float64:
+			valorCentavos = int64(n)
+		case int:
+			valorCentavos = int64(n)
+		case int64:
+			valorCentavos = n
+		}
+	}
+	if valorCentavos == 0 && input["valor"] != nil {
+		if n, ok := input["valor"].(float64); ok {
+			valorCentavos = int64(n * 100)
+		}
+	}
+	var vencimento time.Time
+	if s := str("vencimento"); len(s) >= 10 {
+		for _, layout := range []string{"2006-01-02", time.RFC3339, "02/01/2006"} {
+			if t, err := time.Parse(layout, s[:min(len(s), 10)]); err == nil {
+				vencimento = t.UTC()
+				break
+			}
+		}
+	}
+	if vencimento.IsZero() {
+		vencimento = time.Now().UTC().AddDate(0, 1, 0)
+	}
+	p := &domain.Pagamento{
+		UUID:       uuid.New().String(),
+		Descricao:  str("descricao"),
+		Valor:      valorCentavos,
+		Vencimento: vencimento,
+		Status:     "pendente",
+		Categoria:  str("categoria"),
+	}
+	if p.Descricao == "" {
+		p.Descricao = "Conta a pagar"
+	}
+	if p.Categoria == "" {
+		p.Categoria = "Outros"
+	}
+	if err := s.financeiro.CreatePagamento(ctx, p); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
 func (s *AdminService) CreateLancamento(ctx context.Context, input any) (any, error) {
 	m, _ := input.(map[string]any)
 	str := func(k string) string {

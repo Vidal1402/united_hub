@@ -97,6 +97,19 @@ func (r *MongoFinanceiroRepository) ListPagamentos(ctx context.Context, pag Page
 	return out, total, nil
 }
 
+func (r *MongoFinanceiroRepository) CreatePagamento(ctx context.Context, p *domain.Pagamento) error {
+	now := time.Now().UTC()
+	if p.CreatedAt.IsZero() {
+		p.CreatedAt = now
+	}
+	p.UpdatedAt = now
+	if p.Status == "" {
+		p.Status = "pendente"
+	}
+	_, err := r.collPagamentos.InsertOne(ctx, p)
+	return err
+}
+
 func (r *MongoFinanceiroRepository) CreateRecebivel(ctx context.Context, rec *domain.Recebivel) error {
 	now := time.Now().UTC()
 	if rec.CreatedAt.IsZero() {

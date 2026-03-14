@@ -191,6 +191,21 @@ func (h *Handler) ListPagar(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, result)
 }
 
+func (h *Handler) CreatePagar(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.CreatePagar(ctx, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
+}
+
 func (h *Handler) CreateLancamento(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var input map[string]any
