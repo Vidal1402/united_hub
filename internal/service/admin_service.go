@@ -342,6 +342,13 @@ func (s *AdminService) CreatePagar(ctx context.Context, input map[string]any) (a
 	return p, nil
 }
 
+func (s *AdminService) MarcarPagamentoPago(ctx context.Context, id string) error {
+	if id == "" {
+		return errors.New("id é obrigatório")
+	}
+	return s.financeiro.MarkPagamentoPago(ctx, id)
+}
+
 func (s *AdminService) CreateLancamento(ctx context.Context, input any) (any, error) {
 	m, _ := input.(map[string]any)
 	str := func(k string) string {
@@ -723,6 +730,50 @@ func (s *AdminService) CreateMaterialArquivo(ctx context.Context, input map[stri
 	return a, nil
 }
 
+func (s *AdminService) UpdateMaterialPasta(ctx context.Context, id string, input map[string]any) (any, error) {
+	if id == "" {
+		return nil, errors.New("id é obrigatório")
+	}
+	p, err := s.materiais.GetPastaByUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if p == nil {
+		return nil, errors.New("pasta não encontrada")
+	}
+	if v, ok := input["archived"]; ok && v != nil {
+		if b, ok := v.(bool); ok {
+			p.Archived = b
+		}
+	}
+	if err := s.materiais.UpdatePasta(ctx, p); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func (s *AdminService) UpdateMaterialArquivo(ctx context.Context, id string, input map[string]any) (any, error) {
+	if id == "" {
+		return nil, errors.New("id é obrigatório")
+	}
+	a, err := s.materiais.GetArquivoByUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if a == nil {
+		return nil, errors.New("arquivo não encontrado")
+	}
+	if v, ok := input["archived"]; ok && v != nil {
+		if b, ok := v.(bool); ok {
+			a.Archived = b
+		}
+	}
+	if err := s.materiais.UpdateArquivo(ctx, a); err != nil {
+		return nil, err
+	}
+	return a, nil
+}
+
 func (s *AdminService) ListPastasAdmin(ctx context.Context, clienteUUID string, page PageParams) (dto.Page[any], error) {
 	items, total, err := s.materiais.ListPastasByCliente(ctx, clienteUUID, page)
 	if err != nil {
@@ -910,6 +961,9 @@ func (s *AdminService) GetProducaoAdmin(ctx context.Context, clienteUUID string)
 	}
 	for i := range cards {
 		c := &cards[i]
+		if c.Archived {
+			continue
+		}
 		colID := c.ColumnID
 		if colID == "" {
 			colID = "backlog"
@@ -1028,6 +1082,11 @@ func (s *AdminService) UpdateProducaoCard(ctx context.Context, cardID string, in
 				card.Prazo = t.UTC()
 				break
 			}
+		}
+	}
+	if v, ok := input["archived"]; ok && v != nil {
+		if b, ok := v.(bool); ok {
+			card.Archived = b
 		}
 	}
 	if err := s.kanban.UpdateCard(ctx, card); err != nil {

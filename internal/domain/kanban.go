@@ -33,6 +33,7 @@ type KanbanCard struct {
 	Comentarios int                  `bson:"comentarios" json:"comentarios"`
 	Comments    []KanbanCardComment  `bson:"comments" json:"comments"` // lista para o modal de detalhe
 	Arquivos    int                  `bson:"arquivos" json:"arquivos"`
+	Archived    bool                 `bson:"archived" json:"archived"`
 	CreatedAt   time.Time            `bson:"created_at" json:"created_at"`
 	UpdatedAt   time.Time            `bson:"updated_at" json:"updated_at"`
 }

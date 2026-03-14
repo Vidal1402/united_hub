@@ -95,6 +95,7 @@ func cardToProducaoItem(c *domain.KanbanCard) map[string]any {
 		"comments_list": commentsList,
 		"files":         c.Arquivos,
 		"column_id":     columnID,
+		"archived":      c.Archived,
 	}
 	return out
 }
@@ -112,6 +113,9 @@ func (s *ClienteService) GetProducao(ctx context.Context, clienteUUID string) (a
 	}
 	for i := range cards {
 		c := &cards[i]
+		if c.Archived {
+			continue
+		}
 		colID := c.ColumnID
 		if colID == "" {
 			colID = "backlog"

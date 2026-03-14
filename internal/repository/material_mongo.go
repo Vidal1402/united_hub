@@ -93,3 +93,39 @@ func (r *MongoMaterialRepository) CreateArquivo(ctx context.Context, a *domain.M
 	return err
 }
 
+func (r *MongoMaterialRepository) GetPastaByUUID(ctx context.Context, uuid string) (*domain.MaterialPasta, error) {
+	var p domain.MaterialPasta
+	err := r.collPastas.FindOne(ctx, bson.M{"uuid": uuid}).Decode(&p)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (r *MongoMaterialRepository) UpdatePasta(ctx context.Context, p *domain.MaterialPasta) error {
+	p.UpdatedAt = time.Now().UTC()
+	_, err := r.collPastas.ReplaceOne(ctx, bson.M{"uuid": p.UUID}, p)
+	return err
+}
+
+func (r *MongoMaterialRepository) GetArquivoByUUID(ctx context.Context, uuid string) (*domain.MaterialArquivo, error) {
+	var a domain.MaterialArquivo
+	err := r.collArquivos.FindOne(ctx, bson.M{"uuid": uuid}).Decode(&a)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (r *MongoMaterialRepository) UpdateArquivo(ctx context.Context, a *domain.MaterialArquivo) error {
+	a.UpdatedAt = time.Now().UTC()
+	_, err := r.collArquivos.ReplaceOne(ctx, bson.M{"uuid": a.UUID}, a)
+	return err
+}
+

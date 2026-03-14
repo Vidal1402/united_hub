@@ -21,6 +21,11 @@ func New(svc *service.AdminService, v *validator.Validate) *Handler {
 	return &Handler{svc: svc, validator: v}
 }
 
+// OptionsNoContent responde 204 ao preflight OPTIONS (CORS); não exige token.
+func (h *Handler) OptionsNoContent(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) GetOverview(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	result, err := h.svc.GetOverview(ctx)
@@ -204,6 +209,16 @@ func (h *Handler) CreatePagar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.JSON(w, http.StatusCreated, result)
+}
+
+func (h *Handler) MarcarPagamentoPago(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id := chi.URLParam(r, "id")
+	if err := h.svc.MarcarPagamentoPago(ctx, id); err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func (h *Handler) CreateLancamento(w http.ResponseWriter, r *http.Request) {
@@ -434,6 +449,38 @@ func (h *Handler) ListArquivosAdmin(w http.ResponseWriter, r *http.Request) {
 		Limit:  pag.Limit,
 		Offset: pag.Offset,
 	})
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) UpdateMaterialPasta(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id := chi.URLParam(r, "id")
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.UpdateMaterialPasta(ctx, id, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) UpdateMaterialArquivo(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id := chi.URLParam(r, "id")
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.UpdateMaterialArquivo(ctx, id, input)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
 		return

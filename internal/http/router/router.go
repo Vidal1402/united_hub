@@ -190,6 +190,7 @@ func New(d Deps) http.Handler {
 			ar.Get("/financeiro/receber", adminH.ListReceber)
 			ar.Get("/financeiro/pagar", adminH.ListPagar)
 			ar.Post("/financeiro/pagar", adminH.CreatePagar)
+			ar.Put("/financeiro/pagar/{id}/marcar-pago", adminH.MarcarPagamentoPago)
 			ar.Post("/financeiro/lancamento", adminH.CreateLancamento)
 			ar.Put("/financeiro/receber/{id}/marcar-pago", adminH.MarcarRecebivelPago)
 
@@ -208,7 +209,11 @@ func New(d Deps) http.Handler {
 			ar.Post("/relatorios", adminH.CreateRelatorio)
 
 			ar.Post("/materiais/pastas", adminH.CreateMaterialPasta)
+			ar.Options("/materiais/pastas/{id}", adminH.OptionsNoContent)
+			ar.Patch("/materiais/pastas/{id}", adminH.UpdateMaterialPasta)
 			ar.Post("/materiais/arquivos", adminH.CreateMaterialArquivo)
+			ar.Options("/materiais/arquivos/{id}", adminH.OptionsNoContent)
+			ar.Patch("/materiais/arquivos/{id}", adminH.UpdateMaterialArquivo)
 			ar.Get("/materiais/pastas", adminH.ListPastasAdmin)
 			ar.Get("/materiais/arquivos", adminH.ListArquivosAdmin)
 

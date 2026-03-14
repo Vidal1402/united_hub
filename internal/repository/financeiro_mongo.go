@@ -133,3 +133,16 @@ func (r *MongoFinanceiroRepository) MarkRecebivelPago(ctx context.Context, uuid 
 	return err
 }
 
+func (r *MongoFinanceiroRepository) MarkPagamentoPago(ctx context.Context, uuid string) error {
+	now := time.Now().UTC()
+	update := bson.M{
+		"$set": bson.M{
+			"status":          "pago",
+			"data_pagamento":  now,
+			"updated_at":      now,
+		},
+	}
+	_, err := r.collPagamentos.UpdateOne(ctx, bson.M{"uuid": uuid}, update)
+	return err
+}
+

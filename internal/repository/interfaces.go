@@ -47,6 +47,10 @@ type MaterialRepository interface {
 	ListArquivosByCliente(ctx context.Context, clienteUUID string, pag PageParams) ([]domain.MaterialArquivo, int64, error)
 	CreatePasta(ctx context.Context, p *domain.MaterialPasta) error
 	CreateArquivo(ctx context.Context, a *domain.MaterialArquivo) error
+	GetPastaByUUID(ctx context.Context, uuid string) (*domain.MaterialPasta, error)
+	UpdatePasta(ctx context.Context, p *domain.MaterialPasta) error
+	GetArquivoByUUID(ctx context.Context, uuid string) (*domain.MaterialArquivo, error)
+	UpdateArquivo(ctx context.Context, a *domain.MaterialArquivo) error
 }
 
 type ReuniaoRepository interface {
@@ -63,6 +67,7 @@ type FinanceiroRepository interface {
 	CreateRecebivel(ctx context.Context, r *domain.Recebivel) error
 	CreatePagamento(ctx context.Context, p *domain.Pagamento) error
 	MarkRecebivelPago(ctx context.Context, uuid string) error
+	MarkPagamentoPago(ctx context.Context, uuid string) error
 }
 
 type CursoRepository interface {
