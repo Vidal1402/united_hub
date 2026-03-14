@@ -514,26 +514,42 @@ func (h *Handler) CreateProducaoCard(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, result)
 }
 
-func (h *Handler) MoveProducaoCard(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateProducaoCard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	cardID := chi.URLParam(r, "id")
-	var body struct {
-		ColumnID string `json:"column_id"`
-	}
+	var body map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid body", nil)
 		return
 	}
-	if body.ColumnID == "" {
-		response.Error(w, http.StatusBadRequest, "column_id is required", nil)
+	if len(body) == 0 {
+		response.Error(w, http.StatusBadRequest, "at least one field is required (column_id, title, type, priority, due, description)", nil)
 		return
 	}
-	result, err := h.svc.MoveProducaoCard(ctx, cardID, body.ColumnID)
+	result, err := h.svc.UpdateProducaoCard(ctx, cardID, body)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 	response.JSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) AddProducaoCardComment(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	cardID := chi.URLParam(r, "id")
+	var body struct {
+		Content string `json:"content"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.AddProducaoCardComment(ctx, cardID, body.Content)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
 }
 
 func (h *Handler) GetComercial(w http.ResponseWriter, r *http.Request) {

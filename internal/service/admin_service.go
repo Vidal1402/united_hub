@@ -918,9 +918,9 @@ func (s *AdminService) CreateProducaoCard(ctx context.Context, input map[string]
 	return cardToProducaoItem(c), nil
 }
 
-func (s *AdminService) MoveProducaoCard(ctx context.Context, cardID string, columnID string) (any, error) {
-	if cardID == "" || columnID == "" {
-		return nil, errors.New("id do card e column_id são obrigatórios")
+func (s *AdminService) UpdateProducaoCard(ctx context.Context, cardID string, input map[string]any) (any, error) {
+	if cardID == "" {
+		return nil, errors.New("id do card é obrigatório")
 	}
 	card, err := s.kanban.GetCardByUUID(ctx, cardID)
 	if err != nil {
@@ -929,11 +929,85 @@ func (s *AdminService) MoveProducaoCard(ctx context.Context, cardID string, colu
 	if card == nil {
 		return nil, errors.New("card não encontrado")
 	}
-	card.ColumnID = columnID
+	str := func(k string) string {
+		if v, ok := input[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	if v := str("column_id"); v != "" {
+		card.ColumnID = v
+	}
+	if v := str("title"); v != "" {
+		card.Titulo = v
+	}
+	if v := str("titulo"); v != "" {
+		card.Titulo = v
+	}
+	if v := str("type"); v != "" {
+		card.Tipo = v
+	}
+	if v := str("tipo"); v != "" {
+		card.Tipo = v
+	}
+	if v := str("priority"); v != "" {
+		card.Prioridade = v
+	}
+	if v := str("prioridade"); v != "" {
+		card.Prioridade = v
+	}
+	if v := str("description"); v != "" {
+		card.Descricao = v
+	}
+	if v := str("descricao"); v != "" {
+		card.Descricao = v
+	}
+	if v := str("due"); v != "" {
+		// Aceita DD/MM, DD/MM/YYYY, ISO
+		for _, layout := range []string{"02/01/2006", "02/01", "2006-01-02", time.RFC3339} {
+			if t, err := time.Parse(layout, v); err == nil {
+				card.Prazo = t.UTC()
+				break
+			}
+		}
+	}
 	if err := s.kanban.UpdateCard(ctx, card); err != nil {
 		return nil, err
 	}
 	return cardToProducaoItem(card), nil
+}
+
+func (s *AdminService) AddProducaoCardComment(ctx context.Context, cardID string, content string) (any, error) {
+	if cardID == "" {
+		return nil, errors.New("id do card é obrigatório")
+	}
+	if content == "" {
+		return nil, errors.New("content é obrigatório")
+	}
+	card, err := s.kanban.GetCardByUUID(ctx, cardID)
+	if err != nil {
+		return nil, err
+	}
+	if card == nil {
+		return nil, errors.New("card não encontrado")
+	}
+	if card.Comments == nil {
+		card.Comments = make([]domain.KanbanCardComment, 0)
+	}
+	card.Comments = append(card.Comments, domain.KanbanCardComment{
+		Content:   content,
+		CreatedAt: time.Now().UTC(),
+	})
+	card.Comentarios = len(card.Comments)
+	if err := s.kanban.UpdateCard(ctx, card); err != nil {
+		return nil, err
+	}
+	return map[string]any{
+		"content":    content,
+		"created_at": card.Comments[len(card.Comments)-1].CreatedAt,
+	}, nil
 }
 
 // Usuários (auth/admin)

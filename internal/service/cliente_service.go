@@ -77,17 +77,26 @@ func cardToProducaoItem(c *domain.KanbanCard) map[string]any {
 	if !c.Prazo.IsZero() {
 		due = c.Prazo.Format("02/01") // DD/MM
 	}
-	return map[string]any{
-		"id":        c.UUID,
-		"title":     c.Titulo,
-		"type":      c.Tipo,
-		"priority":  c.Prioridade,
-		"owner":     c.OwnerNome,
-		"due":       due,
-		"comments":  c.Comentarios,
-		"files":     c.Arquivos,
-		"column_id": columnID,
+	commentsList := make([]map[string]any, 0, len(c.Comments))
+	for _, co := range c.Comments {
+		commentsList = append(commentsList, map[string]any{
+			"content":    co.Content,
+			"created_at": co.CreatedAt,
+		})
 	}
+	out := map[string]any{
+		"id":            c.UUID,
+		"title":         c.Titulo,
+		"type":          c.Tipo,
+		"priority":      c.Prioridade,
+		"owner":         c.OwnerNome,
+		"due":           due,
+		"comments":      c.Comentarios,
+		"comments_list": commentsList,
+		"files":         c.Arquivos,
+		"column_id":     columnID,
+	}
+	return out
 }
 
 // Produção — quadro do cliente no formato esperado pelo front (columns[].cards)

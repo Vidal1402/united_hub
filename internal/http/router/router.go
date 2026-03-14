@@ -217,7 +217,8 @@ func New(d Deps) http.Handler {
 
 			ar.Get("/producao", adminH.GetProducaoAdmin)
 			ar.Post("/producao/cards", adminH.CreateProducaoCard)
-			ar.Patch("/producao/cards/{id}", adminH.MoveProducaoCard)
+			ar.Patch("/producao/cards/{id}", adminH.UpdateProducaoCard)
+			ar.Post("/producao/cards/{id}/comments", adminH.AddProducaoCardComment)
 
 			ar.Get("/comercial", adminH.GetComercial)
 
