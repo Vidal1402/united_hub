@@ -77,9 +77,10 @@ func (s *AdminService) ListClientes(ctx context.Context, filtro any, page PagePa
 	}, nil
 }
 
-func (s *AdminService) CreateCliente(ctx context.Context, input dto.CreateClienteInput) (dto.ClienteOutput, error) {
+func (s *AdminService) CreateCliente(ctx context.Context, input dto.CreateClienteInput) (any, error) {
+	id := uuid.New().String()
 	c := &domain.Cliente{
-		UUID:      uuid.New().String(),
+		UUID:      id,
 		Nome:      input.Nome,
 		Email:     input.Email,
 		Segmento:  input.Segmento,
@@ -89,7 +90,7 @@ func (s *AdminService) CreateCliente(ctx context.Context, input dto.CreateClient
 		OwnerUUID: input.OwnerUUID,
 	}
 	if err := s.clientes.Create(ctx, c); err != nil {
-		return dto.ClienteOutput{}, err
+		return nil, err
 	}
 	return dto.ClienteOutput{
 		UUID:      c.UUID,
@@ -113,13 +114,10 @@ func (s *AdminService) GetCliente(ctx context.Context, id string) (any, error) {
 	return c, nil
 }
 
-func (s *AdminService) UpdateCliente(ctx context.Context, id string, input dto.UpdateClienteInput) (dto.ClienteOutput, error) {
+func (s *AdminService) UpdateCliente(ctx context.Context, id string, input dto.UpdateClienteInput) (any, error) {
 	existing, err := s.clientes.GetByUUID(ctx, id)
 	if err != nil {
-		return dto.ClienteOutput{}, err
-	}
-	if existing == nil {
-		return dto.ClienteOutput{}, errors.New("cliente not found")
+		return nil, err
 	}
 	existing.Nome = input.Nome
 	existing.Email = input.Email
@@ -129,7 +127,7 @@ func (s *AdminService) UpdateCliente(ctx context.Context, id string, input dto.U
 	existing.Cidade = input.Cidade
 	existing.OwnerUUID = input.OwnerUUID
 	if err := s.clientes.Update(ctx, existing); err != nil {
-		return dto.ClienteOutput{}, err
+		return nil, err
 	}
 	return dto.ClienteOutput{
 		UUID:      existing.UUID,
@@ -169,7 +167,34 @@ func (s *AdminService) ListColaboradores(ctx context.Context, page PageParams) (
 }
 
 func (s *AdminService) CreateColaborador(ctx context.Context, input any) (any, error) {
-	return map[string]any{}, nil
+	m, _ := input.(map[string]any)
+	str := func(k string) string {
+		if v, ok := m[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	id := uuid.New().String()
+	c := &domain.Colaborador{
+		UUID:   id,
+		Nome:   str("nome"),
+		Email:  str("email"),
+		Cargo:  str("cargo"),
+		Role:   str("role"),
+		Status: str("status"),
+	}
+	if c.Role == "" {
+		c.Role = "Colaborador"
+	}
+	if c.Status == "" {
+		c.Status = "Ativo"
+	}
+	if err := s.colabs.Create(ctx, c); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func (s *AdminService) GetColaborador(ctx context.Context, id string) (any, error) {
@@ -181,7 +206,37 @@ func (s *AdminService) GetColaborador(ctx context.Context, id string) (any, erro
 }
 
 func (s *AdminService) UpdateColaborador(ctx context.Context, id string, input any) (any, error) {
-	return map[string]any{}, nil
+	existing, err := s.colabs.GetByUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, errors.New("colaborador não encontrado")
+	}
+	m, _ := input.(map[string]any)
+	str := func(k string) string {
+		if v, ok := m[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	existing.Nome = str("nome")
+	existing.Email = str("email")
+	existing.Cargo = str("cargo")
+	existing.Role = str("role")
+	existing.Status = str("status")
+	if existing.Role == "" {
+		existing.Role = "Colaborador"
+	}
+	if existing.Status == "" {
+		existing.Status = "Ativo"
+	}
+	if err := s.colabs.Update(ctx, existing); err != nil {
+		return nil, err
+	}
+	return existing, nil
 }
 
 // Financeiro
