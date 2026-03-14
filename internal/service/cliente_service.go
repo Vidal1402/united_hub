@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"backend_united_hub/internal/domain"
 	"backend_united_hub/internal/http/dto"
 	"backend_united_hub/internal/repository"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -57,21 +60,109 @@ func NewClienteService(
 // Métodos de negócio básicos. Neste momento mantemos a implementação
 // enxuta, retornando dados brutos das camadas de repositório.
 
-// Produção
-func (s *ClienteService) GetProducao(ctx context.Context, clienteUUID string) (any, error) {
-	// Placeholder: aqui no futuro agregamos colunas + cards + métricas.
-	cols, err := s.kanban.ListColumnsByCliente(ctx, clienteUUID)
-	if err != nil {
-		return nil, err
+// Colunas fixas do Kanban (Modelo 2)
+var producaoColumns = []map[string]any{
+	{"id": "backlog", "label": "Backlog", "dot": "#94A3B8"},
+	{"id": "doing", "label": "Em andamento", "dot": "#3B82F6"},
+	{"id": "review", "label": "Revisão", "dot": "#F59E0B"},
+	{"id": "done", "label": "Concluído", "dot": "#22C55E"},
+}
+
+func cardToProducaoItem(c *domain.KanbanCard) map[string]any {
+	columnID := c.ColumnID
+	if columnID == "" {
+		columnID = "backlog"
 	}
-	cards, _, err := s.kanban.ListCardsByCliente(ctx, clienteUUID, PageParams{Limit: 100, Offset: 0})
-	if err != nil {
-		return nil, err
+	due := ""
+	if !c.Prazo.IsZero() {
+		due = c.Prazo.Format("02/01") // DD/MM
 	}
 	return map[string]any{
-		"columns": cols,
-		"cards":   cards,
-	}, nil
+		"id":        c.UUID,
+		"title":     c.Titulo,
+		"type":      c.Tipo,
+		"priority":  c.Prioridade,
+		"owner":     c.OwnerNome,
+		"due":       due,
+		"comments":  c.Comentarios,
+		"files":     c.Arquivos,
+		"column_id": columnID,
+	}
+}
+
+// Produção — quadro do cliente no formato esperado pelo front (columns[].cards)
+func (s *ClienteService) GetProducao(ctx context.Context, clienteUUID string) (any, error) {
+	cards, _, err := s.kanban.ListCardsByCliente(ctx, clienteUUID, PageParams{Limit: 500, Offset: 0})
+	if err != nil {
+		return nil, err
+	}
+	columnIDs := []string{"backlog", "doing", "review", "done"}
+	byColumn := make(map[string][]map[string]any)
+	for _, id := range columnIDs {
+		byColumn[id] = nil
+	}
+	for i := range cards {
+		c := &cards[i]
+		colID := c.ColumnID
+		if colID == "" {
+			colID = "backlog"
+		}
+		if byColumn[colID] == nil {
+			byColumn[colID] = make([]map[string]any, 0)
+		}
+		byColumn[colID] = append(byColumn[colID], cardToProducaoItem(c))
+	}
+	columns := make([]map[string]any, 0, len(producaoColumns))
+	for _, col := range producaoColumns {
+		id := col["id"].(string)
+		out := map[string]any{
+			"id":    id,
+			"label": col["label"],
+			"dot":   col["dot"],
+			"cards": byColumn[id],
+		}
+		columns = append(columns, out)
+	}
+	return map[string]any{"columns": columns}, nil
+}
+
+// CreateSolicitacao cria um card na coluna backlog a partir da solicitação do cliente.
+func (s *ClienteService) CreateSolicitacao(ctx context.Context, clienteUUID string, input map[string]any) (any, error) {
+	str := func(k string) string {
+		if v, ok := input[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	titulo := str("titulo")
+	if titulo == "" {
+		return nil, fmt.Errorf("titulo é obrigatório")
+	}
+	tipo := str("tipo")
+	if tipo == "" {
+		tipo = "Criativo"
+	}
+	prioridade := str("prioridade")
+	if prioridade == "" {
+		prioridade = "Média"
+	}
+	c := &domain.KanbanCard{
+		UUID:        uuid.New().String(),
+		ClienteUUID:  clienteUUID,
+		ColumnID:    "backlog",
+		Titulo:      titulo,
+		Tipo:        tipo,
+		Prioridade:  prioridade,
+		Descricao:   str("descricao"),
+		Comentarios: 0,
+		Arquivos:    0,
+	}
+	if err := s.kanban.CreateCard(ctx, c); err != nil {
+		return nil, err
+	}
+	return cardToProducaoItem(c), nil
 }
 
 // Dashboard (com cache simples em Redis por alguns minutos)

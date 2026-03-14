@@ -484,6 +484,58 @@ func (h *Handler) CreateChamado(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, result)
 }
 
+func (h *Handler) GetProducaoAdmin(w http.ResponseWriter, r *http.Request) {
+	clienteUUID := r.URL.Query().Get("cliente_uuid")
+	if clienteUUID == "" {
+		response.Error(w, http.StatusBadRequest, "cliente_uuid is required", nil)
+		return
+	}
+	ctx := r.Context()
+	result, err := h.svc.GetProducaoAdmin(ctx, clienteUUID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) CreateProducaoCard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.CreateProducaoCard(ctx, input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
+}
+
+func (h *Handler) MoveProducaoCard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	cardID := chi.URLParam(r, "id")
+	var body struct {
+		ColumnID string `json:"column_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	if body.ColumnID == "" {
+		response.Error(w, http.StatusBadRequest, "column_id is required", nil)
+		return
+	}
+	result, err := h.svc.MoveProducaoCard(ctx, cardID, body.ColumnID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
 func (h *Handler) GetComercial(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	result, err := h.svc.GetComercial(ctx)

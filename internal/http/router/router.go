@@ -109,6 +109,7 @@ func New(d Deps) http.Handler {
 			cr.Use(middleware.RequireRole(auth.RoleClient))
 
 			cr.Get("/producao", clienteH.GetProducao)
+			cr.Post("/producao/solicitacoes", clienteH.CreateSolicitacao)
 			cr.Get("/dashboard/chart", clienteH.GetDashboardChart)
 			cr.Get("/dashboard/funnel", clienteH.GetDashboardFunnel)
 			cr.Get("/dashboard/kpis", clienteH.GetDashboardKPIs)
@@ -191,6 +192,10 @@ func New(d Deps) http.Handler {
 
 			ar.Get("/chamados", adminH.ListChamadosAdmin)
 			ar.Post("/chamados", adminH.CreateChamado)
+
+			ar.Get("/producao", adminH.GetProducaoAdmin)
+			ar.Post("/producao/cards", adminH.CreateProducaoCard)
+			ar.Patch("/producao/cards/{id}", adminH.MoveProducaoCard)
 
 			ar.Get("/comercial", adminH.GetComercial)
 

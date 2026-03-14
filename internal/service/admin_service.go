@@ -836,6 +836,106 @@ func (s *AdminService) GetComercial(ctx context.Context) (any, error) {
 	return map[string]any{}, nil
 }
 
+// Produção (Kanban) — admin vê quadro por cliente, cria e move cards
+
+func (s *AdminService) GetProducaoAdmin(ctx context.Context, clienteUUID string) (any, error) {
+	if clienteUUID == "" {
+		return nil, errors.New("cliente_uuid é obrigatório")
+	}
+	cards, _, err := s.kanban.ListCardsByCliente(ctx, clienteUUID, repository.PageParams{Limit: 500, Offset: 0})
+	if err != nil {
+		return nil, err
+	}
+	columnIDs := []string{"backlog", "doing", "review", "done"}
+	byColumn := make(map[string][]map[string]any)
+	for _, id := range columnIDs {
+		byColumn[id] = nil
+	}
+	for i := range cards {
+		c := &cards[i]
+		colID := c.ColumnID
+		if colID == "" {
+			colID = "backlog"
+		}
+		if byColumn[colID] == nil {
+			byColumn[colID] = make([]map[string]any, 0)
+		}
+		byColumn[colID] = append(byColumn[colID], cardToProducaoItem(c))
+	}
+	columns := make([]map[string]any, 0, len(producaoColumns))
+	for _, col := range producaoColumns {
+		id := col["id"].(string)
+		columns = append(columns, map[string]any{
+			"id":    id,
+			"label": col["label"],
+			"dot":   col["dot"],
+			"cards": byColumn[id],
+		})
+	}
+	return map[string]any{"columns": columns}, nil
+}
+
+func (s *AdminService) CreateProducaoCard(ctx context.Context, input map[string]any) (any, error) {
+	str := func(k string) string {
+		if v, ok := input[k]; ok && v != nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return ""
+	}
+	clienteUUID := str("cliente_uuid")
+	if clienteUUID == "" {
+		return nil, errors.New("cliente_uuid é obrigatório")
+	}
+	columnID := str("column_id")
+	if columnID == "" {
+		columnID = "backlog"
+	}
+	c := &domain.KanbanCard{
+		UUID:        uuid.New().String(),
+		ClienteUUID:  clienteUUID,
+		ColumnID:    columnID,
+		Titulo:      str("title"),
+		Tipo:        str("type"),
+		Prioridade:  str("priority"),
+		OwnerNome:   str("owner"),
+		Comentarios: 0,
+		Arquivos:    0,
+	}
+	if c.Titulo == "" {
+		c.Titulo = str("titulo")
+	}
+	if c.Tipo == "" {
+		c.Tipo = "Campanha"
+	}
+	if c.Prioridade == "" {
+		c.Prioridade = "Média"
+	}
+	if err := s.kanban.CreateCard(ctx, c); err != nil {
+		return nil, err
+	}
+	return cardToProducaoItem(c), nil
+}
+
+func (s *AdminService) MoveProducaoCard(ctx context.Context, cardID string, columnID string) (any, error) {
+	if cardID == "" || columnID == "" {
+		return nil, errors.New("id do card e column_id são obrigatórios")
+	}
+	card, err := s.kanban.GetCardByUUID(ctx, cardID)
+	if err != nil {
+		return nil, err
+	}
+	if card == nil {
+		return nil, errors.New("card não encontrado")
+	}
+	card.ColumnID = columnID
+	if err := s.kanban.UpdateCard(ctx, card); err != nil {
+		return nil, err
+	}
+	return cardToProducaoItem(card), nil
+}
+
 // Usuários (auth/admin)
 
 func (s *AdminService) CreateUsuario(ctx context.Context, input dto.UsuarioCreateInput) (dto.UsuarioOutput, error) {

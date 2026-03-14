@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"backend_united_hub/internal/domain"
 	"go.mongodb.org/mongo-driver/bson"
@@ -61,5 +62,33 @@ func (r *MongoKanbanRepository) ListCardsByCliente(ctx context.Context, clienteU
 		return nil, 0, err
 	}
 	return out, total, nil
+}
+
+func (r *MongoKanbanRepository) CreateCard(ctx context.Context, c *domain.KanbanCard) error {
+	now := time.Now().UTC()
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = now
+	}
+	c.UpdatedAt = now
+	_, err := r.collCards.InsertOne(ctx, c)
+	return err
+}
+
+func (r *MongoKanbanRepository) GetCardByUUID(ctx context.Context, uuid string) (*domain.KanbanCard, error) {
+	var card domain.KanbanCard
+	err := r.collCards.FindOne(ctx, bson.M{"uuid": uuid}).Decode(&card)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &card, nil
+}
+
+func (r *MongoKanbanRepository) UpdateCard(ctx context.Context, c *domain.KanbanCard) error {
+	c.UpdatedAt = time.Now().UTC()
+	_, err := r.collCards.ReplaceOne(ctx, bson.M{"uuid": c.UUID}, c)
+	return err
 }
 

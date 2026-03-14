@@ -40,6 +40,30 @@ func (h *Handler) GetProducao(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, result)
 }
 
+func (h *Handler) CreateSolicitacao(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetClaims(r)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+	if !claims.CanProducao {
+		response.Error(w, http.StatusForbidden, "forbidden", nil)
+		return
+	}
+	ctx := r.Context()
+	var input map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid body", nil)
+		return
+	}
+	result, err := h.svc.CreateSolicitacao(ctx, claims.ClienteID.String(), input)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusCreated, result)
+}
+
 func (h *Handler) GetDashboardChart(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetClaims(r)
 	if !ok {

@@ -31,6 +31,9 @@ type ColaboradorRepository interface {
 type KanbanRepository interface {
 	ListColumnsByCliente(ctx context.Context, clienteUUID string) ([]domain.KanbanColumn, error)
 	ListCardsByCliente(ctx context.Context, clienteUUID string, pag PageParams) ([]domain.KanbanCard, int64, error)
+	CreateCard(ctx context.Context, c *domain.KanbanCard) error
+	GetCardByUUID(ctx context.Context, uuid string) (*domain.KanbanCard, error)
+	UpdateCard(ctx context.Context, c *domain.KanbanCard) error
 }
 
 type RelatorioRepository interface {
