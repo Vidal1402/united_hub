@@ -113,6 +113,17 @@ func (r *MongoClienteRepository) Update(ctx context.Context, c *domain.Cliente) 
 	return err
 }
 
+// UpdatePartial aplica apenas os campos enviados em set (ex.: $set), sem zerar os ausentes.
+// Evita E11000 duplicate key em email quando o front envia atualização parcial.
+func (r *MongoClienteRepository) UpdatePartial(ctx context.Context, uuid string, set map[string]interface{}) error {
+	if len(set) == 0 {
+		return nil
+	}
+	set["updated_at"] = time.Now().UTC()
+	_, err := r.coll.UpdateOne(ctx, bson.M{"uuid": uuid}, bson.M{"$set": set})
+	return err
+}
+
 func (r *MongoClienteRepository) Desativar(ctx context.Context, uuid string) error {
 	update := bson.M{
 		"$set": bson.M{

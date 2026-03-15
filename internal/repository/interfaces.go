@@ -18,6 +18,7 @@ type ClienteRepository interface {
 	ListByOwner(ctx context.Context, ownerUUID string, pag PageParams) ([]domain.Cliente, int64, error)
 	Create(ctx context.Context, c *domain.Cliente) error
 	Update(ctx context.Context, c *domain.Cliente) error
+	UpdatePartial(ctx context.Context, uuid string, set map[string]interface{}) error
 	Desativar(ctx context.Context, uuid string) error
 }
 

@@ -89,7 +89,7 @@ func (h *Handler) GetCliente(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateCliente(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id := chi.URLParam(r, "id")
-	var input dto.UpdateClienteInput
+	var input map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid body", nil)
 		return

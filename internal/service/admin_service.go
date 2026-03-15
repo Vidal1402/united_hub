@@ -124,33 +124,81 @@ func (s *AdminService) GetCliente(ctx context.Context, id string) (any, error) {
 	return c, nil
 }
 
-func (s *AdminService) UpdateCliente(ctx context.Context, id string, input dto.UpdateClienteInput) (any, error) {
+func (s *AdminService) UpdateCliente(ctx context.Context, id string, input map[string]any) (any, error) {
 	existing, err := s.clientes.GetByUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	existing.Nome = input.Nome
-	existing.Email = input.Email
-	existing.Segmento = input.Segmento
-	existing.Plano = input.Plano
-	existing.Status = input.Status
-	existing.Cidade = input.Cidade
-	existing.OwnerUUID = input.OwnerUUID
-	if err := s.clientes.Update(ctx, existing); err != nil {
+	if existing == nil {
+		return nil, errors.New("cliente não encontrado")
+	}
+	// Update parcial: só os campos que vieram no body (evita zerar email etc. e E11000 duplicate key)
+	set := make(map[string]interface{})
+	if v, ok := input["nome"]; ok {
+		if s, ok := v.(string); ok {
+			set["nome"] = s
+		}
+	}
+	if v, ok := input["email"]; ok {
+		if s, ok := v.(string); ok {
+			set["email"] = s
+		}
+	}
+	if v, ok := input["segmento"]; ok {
+		if s, ok := v.(string); ok {
+			set["segmento"] = s
+		}
+	}
+	if v, ok := input["plano"]; ok {
+		if s, ok := v.(string); ok {
+			set["plano"] = s
+		}
+	}
+	if v, ok := input["status"]; ok {
+		if s, ok := v.(string); ok {
+			set["status"] = s
+		}
+	}
+	if v, ok := input["cidade"]; ok {
+		if s, ok := v.(string); ok {
+			set["cidade"] = s
+		}
+	}
+	if v, ok := input["owner_uuid"]; ok {
+		if s, ok := v.(string); ok {
+			set["owner_uuid"] = s
+		}
+	}
+	if len(set) == 0 {
+		return s.clienteToOutput(existing), nil
+	}
+	if err := s.clientes.UpdatePartial(ctx, id, set); err != nil {
 		return nil, err
 	}
+	// Rebuscar para retornar o cliente atualizado
+	updated, err := s.clientes.GetByUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if updated != nil {
+		return s.clienteToOutput(updated), nil
+	}
+	return s.clienteToOutput(existing), nil
+}
+
+func (s *AdminService) clienteToOutput(c *domain.Cliente) dto.ClienteOutput {
 	return dto.ClienteOutput{
-		UUID:      existing.UUID,
-		Nome:      existing.Nome,
-		Email:     existing.Email,
-		Segmento:  existing.Segmento,
-		Plano:     existing.Plano,
-		Status:    existing.Status,
-		Cidade:    existing.Cidade,
-		OwnerUUID: existing.OwnerUUID,
-		CreatedAt: existing.CreatedAt,
-		UpdatedAt: existing.UpdatedAt,
-	}, nil
+		UUID:      c.UUID,
+		Nome:      c.Nome,
+		Email:     c.Email,
+		Segmento:  c.Segmento,
+		Plano:     c.Plano,
+		Status:    c.Status,
+		Cidade:    c.Cidade,
+		OwnerUUID: c.OwnerUUID,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}
 }
 
 func (s *AdminService) DesativarCliente(ctx context.Context, id string) error {
