@@ -12,7 +12,7 @@ type UserInfo struct {
 	ClienteUUID         string                 `json:"cliente_uuid,omitempty"`
 	CanProducao         bool                   `json:"can_producao"`
 	CanPerformance      bool                   `json:"can_performance"`
-	PerformanceChannels map[string]interface{} `json:"performance_channels,omitempty"` // preenchido para role client (aba Performance)
+	PerformanceChannels map[string]interface{} `json:"performance_channels"` // sempre presente para role client (vazio {} ou com dados)
 }
 
 type LoginResponse struct {
