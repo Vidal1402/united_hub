@@ -6,7 +6,7 @@ import (
 
 	"backend_united_hub/internal/domain"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
+	"github.com/google/uuid" 
 )
 
 type Role string
