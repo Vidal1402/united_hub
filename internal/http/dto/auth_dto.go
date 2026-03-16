@@ -6,12 +6,13 @@ type LoginInput struct {
 }
 
 type UserInfo struct {
-	Name           string `json:"name"`
-	Email          string `json:"email"`
-	Role           string `json:"role"`
-	ClienteUUID    string `json:"cliente_uuid,omitempty"`
-	CanProducao    bool   `json:"can_producao"`
-	CanPerformance bool   `json:"can_performance"`
+	Name                string                 `json:"name"`
+	Email               string                 `json:"email"`
+	Role                string                 `json:"role"`
+	ClienteUUID         string                 `json:"cliente_uuid,omitempty"`
+	CanProducao         bool                   `json:"can_producao"`
+	CanPerformance      bool                   `json:"can_performance"`
+	PerformanceChannels map[string]interface{} `json:"performance_channels,omitempty"` // preenchido para role client (aba Performance)
 }
 
 type LoginResponse struct {

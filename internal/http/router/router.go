@@ -158,6 +158,7 @@ func New(d Deps) http.Handler {
 			cr.Post("/suporte/chamados", clienteH.CreateChamado)
 			cr.Get("/suporte/faq", clienteH.ListFAQ)
 
+			cr.Get("/me", clienteH.GetPerfil)
 			cr.Get("/config/perfil", clienteH.GetPerfil)
 			cr.Put("/config/perfil", clienteH.UpdatePerfil)
 

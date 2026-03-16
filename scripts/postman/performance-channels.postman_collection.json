@@ -1,0 +1,94 @@
+{
+  "info": {
+    "name": "Performance channels — testar rotas",
+    "description": "Testa se os números (performance_channels) vêm nas rotas certas.\n\n**Como usar:**\n1. Ajuste `base_url` (ex.: http://localhost:8080 ou https://united-hub-3a6p.onrender.com).\n2. Em **Login (cliente)**, coloque email e senha de um usuário **cliente** no body.\n3. Execute **Login (cliente)** — o token é salvo automaticamente.\n4. Execute **GET /api/auth/me** e **GET /api/cliente/config/perfil** (e opcionalmente **GET /api/cliente/me**).\n5. Em cada resposta, confira se existe o campo `performance_channels` e se tem dados (meta_ads, google_ads, etc.).\n\nSe vier `{}` ou não vier o campo, o admin ainda não salvou canais para esse cliente.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Login (cliente)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "if (json.token) {",
+              "  pm.collectionVariables.set('token', json.token);",
+              "  console.log('Token salvo. Use nas próximas requisições.');",
+              "} else {",
+              "  console.log('Resposta sem token:', JSON.stringify(json));",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"SEU_EMAIL_CLIENTE\",\n  \"password\": \"SUA_SENHA\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login com usuário **cliente** (role client). O token é salvo automaticamente na variável da collection."
+      }
+    },
+    {
+      "name": "2. GET /api/auth/me",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/auth/me",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "me"]
+        },
+        "description": "Resposta = objeto do **usuário**. Para role client, o backend preenche **performance_channels** na raiz.\n\nOnde olhar: **response.performance_channels** (na raiz do JSON)."
+      }
+    },
+    {
+      "name": "3. GET /api/cliente/config/perfil",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/cliente/config/perfil",
+          "host": ["{{base_url}}"],
+          "path": ["api", "cliente", "config", "perfil"]
+        },
+        "description": "Resposta = objeto do **cliente** na raiz (não dentro de data/client).\n\nOnde olhar: **response.performance_channels** (na raiz do JSON)."
+      }
+    },
+    {
+      "name": "4. GET /api/cliente/me",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/cliente/me",
+          "host": ["{{base_url}}"],
+          "path": ["api", "cliente", "me"]
+        },
+        "description": "Mesmo handler que config/perfil. Resposta = objeto do **cliente** na raiz.\n\nOnde olhar: **response.performance_channels** (na raiz do JSON)."
+      }
+    }
+  ]
+}

@@ -78,8 +78,8 @@ func (s *AuthService) Login(ctx context.Context, in dto.LoginInput) (dto.LoginRe
 }
 
 // Me devolve as informações básicas de usuário a partir das claims.
+// Para role client, busca o documento do cliente e preenche performance_channels (aba Performance).
 func (s *AuthService) Me(ctx context.Context, claims auth.Claims) (dto.UserInfo, error) {
-	// Opcionalmente buscar usuário para garantir que ainda existe.
 	var u *domain.Usuario
 	if claims.UsuarioID != uuid.Nil {
 		user, err := s.usuarios.GetByUUID(ctx, claims.UsuarioID.String())
@@ -101,10 +101,19 @@ func (s *AuthService) Me(ctx context.Context, claims auth.Claims) (dto.UserInfo,
 		info.ClienteUUID = claims.ClienteID.String()
 	}
 
-	// Se carregamos o usuário do banco, podemos refinar info.
 	if u != nil {
 		info.CanProducao = u.CanProducao
 		info.CanPerformance = u.CanPerformance
+	}
+
+	// Cliente: buscar documento do cliente para retornar performance_channels (mesma fonte que o admin atualiza).
+	// Sempre devolver a chave para role client (objeto vazio se não houver dados), para o front ter formato consistente.
+	if claims.Role == auth.RoleClient && claims.ClienteID != uuid.Nil {
+		info.PerformanceChannels = map[string]interface{}{}
+		cliente, err := s.clientes.GetByUUID(ctx, claims.ClienteID.String())
+		if err == nil && cliente != nil && cliente.PerformanceChannels != nil {
+			info.PerformanceChannels = cliente.PerformanceChannels
+		}
 	}
 
 	return info, nil

@@ -169,6 +169,9 @@ func (s *AdminService) UpdateCliente(ctx context.Context, id string, input map[s
 			set["owner_uuid"] = s
 		}
 	}
+	if v, ok := input["performance_channels"]; ok && v != nil {
+		set["performance_channels"] = v
+	}
 	if len(set) == 0 {
 		return s.clienteToOutput(existing), nil
 	}
@@ -188,16 +191,17 @@ func (s *AdminService) UpdateCliente(ctx context.Context, id string, input map[s
 
 func (s *AdminService) clienteToOutput(c *domain.Cliente) dto.ClienteOutput {
 	return dto.ClienteOutput{
-		UUID:      c.UUID,
-		Nome:      c.Nome,
-		Email:     c.Email,
-		Segmento:  c.Segmento,
-		Plano:     c.Plano,
-		Status:    c.Status,
-		Cidade:    c.Cidade,
-		OwnerUUID: c.OwnerUUID,
-		CreatedAt: c.CreatedAt,
-		UpdatedAt: c.UpdatedAt,
+		UUID:                c.UUID,
+		Nome:                c.Nome,
+		Email:               c.Email,
+		Segmento:            c.Segmento,
+		Plano:               c.Plano,
+		Status:              c.Status,
+		Cidade:              c.Cidade,
+		OwnerUUID:           c.OwnerUUID,
+		PerformanceChannels: c.PerformanceChannels,
+		CreatedAt:           c.CreatedAt,
+		UpdatedAt:           c.UpdatedAt,
 	}
 }
 

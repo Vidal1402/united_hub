@@ -15,15 +15,16 @@ type ClienteInput struct {
 
 // ClienteOutput representa o cliente retornado na API.
 type ClienteOutput struct {
-	UUID      string    `json:"uuid"`
-	Nome      string    `json:"nome"`
-	Email     string    `json:"email"`
-	Segmento  string    `json:"segmento"`
-	Plano     string    `json:"plano"`
-	Status    string    `json:"status"`
-	Cidade    string    `json:"cidade"`
-	OwnerUUID string    `json:"owner_uuid"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	UUID                string                 `json:"uuid"`
+	Nome                string                 `json:"nome"`
+	Email               string                 `json:"email"`
+	Segmento            string                 `json:"segmento"`
+	Plano               string                 `json:"plano"`
+	Status              string                 `json:"status"`
+	Cidade              string                 `json:"cidade"`
+	OwnerUUID           string                 `json:"owner_uuid"`
+	PerformanceChannels map[string]interface{} `json:"performance_channels,omitempty"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
 }
 
