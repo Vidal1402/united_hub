@@ -102,3 +102,51 @@ Nenhuma alteração adicional é necessária no backend para que os dois pontos 
 As duas respostas são obtidas em paralelo (`Promise.all`). O valor usado é o primeiro não vazio entre: `extractPc(perfilRes)`, `extractPc(authMeRes)` e `extractPc(user)` (do AuthContext). A função `extractPc(obj)` lê `obj.performance_channels` (e variantes em camelCase/PascalCase e caminhos aninhados como fallback).
 
 Os números exibidos (KPIs e “Dados por canal”) vêm desse `performance_channels` normalizado, com chaves em snake_case (`meta_ads`, `google_ads`, `organico`, `outros`) e campos por canal: `gasto`, `leads`, `conversoes`.
+
+---
+
+## Leads por Período, Funil, Conversões — como preencher
+
+Para as seções **Leads por Período**, **Todos os canais**, **Conversões**, **Funil de Aquisição** e **Dados da API** não ficarem vazias, o **admin** deve salvar no cliente (PUT `/api/admin/clientes/:id`) o campo `performance_channels` com as chaves abaixo. O backend expõe essas chaves **na raiz** da resposta em **GET /api/auth/me** e em **GET /api/cliente/performance**.
+
+### Formato que o admin deve enviar (exemplo)
+
+```json
+{
+  "performance_channels": {
+    "meta_ads":    { "gasto": 1000, "leads": 50, "conversoes": 10 },
+    "google_ads":  { "gasto": 500, "leads": 20, "conversoes": 5 },
+    "leads_por_periodo": [
+      { "periodo": "2025-01", "leads": 20 },
+      { "periodo": "2025-02", "leads": 30 }
+    ],
+    "funil": {
+      "impressoes": 10000,
+      "cliques": 500,
+      "leads": 50,
+      "conversoes": 10
+    },
+    "conversoes_totais": 20
+  }
+}
+```
+
+### Onde o front lê (na raiz da resposta)
+
+| Seção / dado | Fonte |
+|--------------|--------|
+| **Todos os canais** | `response.performance_channels` (canais: `meta_ads`, `google_ads`, etc.) |
+| **Leads por Período** | `response.leads_por_periodo` (array) ou `response.performance_channels.leads_por_periodo` |
+| **Conversões** | `response.conversoes_totais` ou soma de `conversoes` por canal |
+| **Funil de Aquisição** | `response.funil` (objeto com `impressoes`, `cliques`, `leads`, `conversoes`) |
+
+### Endpoint dedicado à aba Performance
+
+- **GET /api/cliente/performance** (JWT cliente)  
+  Retorna um único objeto com tudo na raiz:
+  - `performance_channels`
+  - `leads_por_periodo`
+  - `funil`
+  - `conversoes_totais`
+
+O front pode usar **GET /api/cliente/performance** como fonte única para a aba Performance, ou continuar usando **GET /api/auth/me** (que agora também inclui `leads_por_periodo`, `funil` e `conversoes_totais` na raiz para role client).

@@ -406,6 +406,41 @@ func (s *ClienteService) GetPerfil(ctx context.Context, clienteUUID string) (any
 	return c, nil
 }
 
+// GetPerformance retorna payload para a aba Performance: performance_channels, leads_por_periodo, funil, conversoes_totais na raiz.
+func (s *ClienteService) GetPerformance(ctx context.Context, clienteUUID string) (map[string]any, error) {
+	c, err := s.clientes.GetByUUID(ctx, clienteUUID)
+	if err != nil || c == nil {
+		return map[string]any{
+			"performance_channels":  map[string]interface{}{},
+			"leads_por_periodo":      []interface{}{},
+			"funil":                  map[string]interface{}{},
+			"conversoes_totais":      nil,
+		}, nil
+	}
+	pc := c.PerformanceChannels
+	if pc == nil {
+		pc = map[string]interface{}{}
+	}
+	out := map[string]any{
+		"performance_channels": pc,
+		"leads_por_periodo":    []interface{}{},
+		"funil":                map[string]interface{}{},
+		"conversoes_totais":    nil,
+	}
+	if c.PerformanceChannels != nil {
+		if v, ok := c.PerformanceChannels["leads_por_periodo"]; ok && v != nil {
+			out["leads_por_periodo"] = v
+		}
+		if v, ok := c.PerformanceChannels["funil"]; ok && v != nil {
+			out["funil"] = v
+		}
+		if v, ok := c.PerformanceChannels["conversoes_totais"]; ok && v != nil {
+			out["conversoes_totais"] = v
+		}
+	}
+	return out, nil
+}
+
 func (s *ClienteService) UpdatePerfil(ctx context.Context, clienteUUID string, input dto.UpdatePerfilInput) error {
 	// Implementação real: carregar cliente, aplicar mudanças, salvar.
 	return nil

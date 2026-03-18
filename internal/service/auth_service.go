@@ -106,13 +106,23 @@ func (s *AuthService) Me(ctx context.Context, claims auth.Claims) (dto.UserInfo,
 		info.CanPerformance = u.CanPerformance
 	}
 
-	// Cliente: buscar documento do cliente para retornar performance_channels (mesma fonte que o admin atualiza).
-	// Sempre devolver a chave para role client (objeto vazio se não houver dados), para o front ter formato consistente.
+	// Cliente: buscar documento do cliente para retornar performance_channels e dados da aba Performance.
+	// Sempre devolver performance_channels para role client (objeto vazio se não houver dados).
 	if claims.Role == auth.RoleClient && claims.ClienteID != uuid.Nil {
 		info.PerformanceChannels = map[string]interface{}{}
 		cliente, err := s.clientes.GetByUUID(ctx, claims.ClienteID.String())
 		if err == nil && cliente != nil && cliente.PerformanceChannels != nil {
 			info.PerformanceChannels = cliente.PerformanceChannels
+			// Expor na raiz para o front preencher Leads por Período, Funil, Conversões
+			if v, ok := cliente.PerformanceChannels["leads_por_periodo"]; ok && v != nil {
+				info.LeadsPorPeriodo = v
+			}
+			if v, ok := cliente.PerformanceChannels["funil"]; ok && v != nil {
+				info.Funil = v
+			}
+			if v, ok := cliente.PerformanceChannels["conversoes_totais"]; ok && v != nil {
+				info.ConversoesTotais = v
+			}
 		}
 	}
 

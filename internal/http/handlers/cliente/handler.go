@@ -372,6 +372,22 @@ func (h *Handler) GetPerfil(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, result)
 }
 
+// GetPerformance retorna dados para a aba Performance: performance_channels, leads_por_periodo, funil, conversoes_totais na raiz.
+func (h *Handler) GetPerformance(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.GetClaims(r)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+	ctx := r.Context()
+	result, err := h.svc.GetPerformance(ctx, claims.ClienteID.String())
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	response.JSON(w, http.StatusOK, result)
+}
+
 func (h *Handler) UpdatePerfil(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.GetClaims(r)
 	if !ok {

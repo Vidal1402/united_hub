@@ -29,6 +29,7 @@ func corsOrigins() []string {
 		"http://localhost:5174",
 		"http://127.0.0.1:5173",
 		"http://127.0.0.1:5174",
+		"https://front-hub-vs9l.vercel.app",
 	}
 	if s := os.Getenv("CORS_ORIGINS"); s != "" {
 		// CORS_ORIGINS pode ser "https://meu-front.onrender.com" ou várias separadas por vírgula
@@ -160,6 +161,7 @@ func New(d Deps) http.Handler {
 
 			cr.Get("/me", clienteH.GetPerfil)
 			cr.Get("/config/perfil", clienteH.GetPerfil)
+			cr.Get("/performance", clienteH.GetPerformance)
 			cr.Put("/config/perfil", clienteH.UpdatePerfil)
 
 			cr.Get("/config/usuarios", clienteH.ListUsuarios)
